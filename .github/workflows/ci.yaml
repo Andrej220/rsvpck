@@ -105,6 +105,17 @@ jobs:
           echo "Collected files:"
           ls -l collected
 
+      - name: Make consolidated checksums
+        run: |
+          cd collected
+          rm -f SHA256SUMS.txt
+          # include all release assets we’ll upload (archives + exe)
+          sha256sum ${{ env.APP_NAME }}_*_linux_*.tar.gz \
+                     ${{ env.APP_NAME }}_*_windows_*.zip \
+                     ${{ env.APP_NAME }}_*_windows_*.exe \
+            > SHA256SUMS.txt
+          wc -l SHA256SUMS.txt
+
       - name: Create/Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -116,10 +127,9 @@ jobs:
           make_latest: true
           fail_on_unmatched_files: false
           files: |
-            collected/*.tar.gz
-            collected/*.zip
-            collected/*.exe
-            collected/${{ env.APP_NAME }}_*_linux_*   
+            collected/${{ env.APP_NAME }}_*_linux_*.tar.gz
+            collected/${{ env.APP_NAME }}_*_windows_*.zip
+            collected/${{ env.APP_NAME }}_*_windows_*.exe
             collected/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
