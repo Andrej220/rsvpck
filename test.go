@@ -35,7 +35,7 @@ type NetTestResult struct {
 
 func (c *NetTestConfig) String() string{
 
-	out := fmt.Sprintf("Machine uuid: %s, \nHost name: %s, \nDate: %s \n", 
+	out := fmt.Sprintf("RSvP Connectivity Diagnostic - Site uuid: %s, \nHost name: %s, \nDate: %s ", 
 						c.SiteID, c.HostName, c.TestDate.Format("2006-01-02 15:04:05"))
 
 	return out
@@ -73,8 +73,8 @@ func (r *NetTestResult) MarshalText() ([]byte, error) {
 }
 
 func PrintNetTestResult(data []NetTestResult, config *NetTestConfig) {
-	fmt.Println(strings.Repeat("=", delimeterLength))
 	fmt.Println(config.String())
+	fmt.Println(strings.Repeat("=", delimeterLength))
 	for _, v := range(data){
 		fmt.Println(v.String())
 		fmt.Println(strings.Repeat("", delimeterLength))
