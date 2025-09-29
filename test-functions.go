@@ -76,6 +76,7 @@ func testInternetConnectivity(config *NetTestConfig) NetTestResult {
         result.Status = StatusFail
         result.Details = "No internet connection"
         result.Error = err
+		result.Latency = timeoutMarker
 		return result
     } 
 
@@ -155,7 +156,6 @@ func testProxyHTTP(proxyAddr string, targetURL string, timeout time.Duration) Ne
         return result
     }
     defer resp.Body.Close()
-
 
     if resp.StatusCode == http.StatusOK {
         result.Status = StatusPass
