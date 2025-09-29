@@ -6,6 +6,8 @@ on:
     tags: [ "v*.*.*" ]          # trigger on version tag
   pull_request:                  # run tests on pull request
 
+permissions:
+    contents: write
 jobs:
   test:
     name: Test
