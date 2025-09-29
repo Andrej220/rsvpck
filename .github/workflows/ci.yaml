@@ -127,6 +127,8 @@ jobs:
           make_latest: true
           fail_on_unmatched_files: false
           files: |
+            collected/${{ env.APP_NAME }}_*_linux_amd64
+            collected/${{ env.APP_NAME }}_*_linux_arm64
             collected/${{ env.APP_NAME }}_*_linux_*.tar.gz
             collected/${{ env.APP_NAME }}_*_windows_*.zip
             collected/${{ env.APP_NAME }}_*_windows_*.exe
