@@ -78,7 +78,7 @@ jobs:
           sha256sum * > SHA256SUMS.txt
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/collected-artifact@v4
         with:
           name: "${{ matrix.goos }}-${{ matrix.goarch }}"
           path: |
@@ -91,18 +91,19 @@ jobs:
     if: ${{ github.ref_type == 'tag' }}
     needs: build
     runs-on: ubuntu-latest
+    env:
+     APP_NAME: rsvpck
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: dist   
+          path: collected
+          merge-multiple: true        
 
-      - name: Flatten artifacts
+      - name: List collected files, debug
         run: |
-          shopt -s globstar nullglob
-          mkdir -p upload
-          mv dist/**/dist/* upload/ || true
-          ls -l upload
+          echo "Collected files:"
+          ls -l collected
 
       - name: Create/Update GitHub Release
         uses: softprops/action-gh-release@v2
@@ -115,11 +116,11 @@ jobs:
           make_latest: true
           fail_on_unmatched_files: false
           files: |
-            upload/*.tar.gz
-            upload/*.zip
-            upload/*.exe
-            upload/${{ env.APP_NAME }}_*   
-            upload/SHA256SUMS.txt
+            collected/*.tar.gz
+            collected/*.zip
+            collected/*.exe
+            collected/${{ env.APP_NAME }}_*   
+            collected/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
