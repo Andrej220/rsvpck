@@ -1,40 +1,36 @@
-name: CI & Release 
+name: CI & Release
 
 on:
   push:
-    branches: [ "**" ]          # run tests 
-    tags: [ "v*.*.*" ]          # trigger on version tag
-  pull_request:                  # run tests on pull request
+    branches: [ "**" ]  # run tests
+    tags: [ "v*.*.*" ]  # trigger on version tag
+  pull_request:         # run tests on pull request
 
 permissions:
-    contents: write
+  contents: write   
+
 jobs:
   test:
-    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22.x"
-
-      - name: Cache Go modules/build
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
-
       - name: Go vet & test (race)
         run: |
           go vet ./...
           go test ./... -race -count=1 -v
 
-  build_release:
-    name: Build & Release on tag
+  build:
+    name: Build (matrix)
     if: ${{ github.ref_type == 'tag' }}
     needs: test
     runs-on: ubuntu-latest
@@ -45,12 +41,11 @@ jobs:
         goarch: [ amd64, arm64 ]
     env:
       CGO_ENABLED: "0"
-      APP_NAME: rsvpck                 
+      APP_NAME: rsvpck
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0               # TODO: changelogs
-
+          fetch-depth: 0    # TODO: changelogs
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22.x"
@@ -82,18 +77,49 @@ jobs:
           done
           sha256sum * > SHA256SUMS.txt
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ matrix.goos }}-${{ matrix.goarch }}"
+          path: |
+            dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Create GitHub Release (single job)
+    if: ${{ github.ref_type == 'tag' }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist   
+
+      - name: Flatten artifacts
+        run: |
+          shopt -s globstar nullglob
+          mkdir -p upload
+          mv dist/**/dist/* upload/ || true
+          ls -l upload
+
       - name: Create/Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.ver.outputs.version }}
-          name:     ${{ steps.ver.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          name:     ${{ github.ref_name }}
           draft: false
           prerelease: false
           generate_release_notes: true
           make_latest: true
+          fail_on_unmatched_files: false
           files: |
-            dist/*.tar.gz
-            dist/*.zip
-            dist/SHA256SUMS.txt
+            upload/*.tar.gz
+            upload/*.zip
+            upload/*.exe
+            upload/${{ env.APP_NAME }}_*   
+            upload/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
