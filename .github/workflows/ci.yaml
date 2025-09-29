@@ -119,7 +119,7 @@ jobs:
             collected/*.tar.gz
             collected/*.zip
             collected/*.exe
-            collected/${{ env.APP_NAME }}_*   
+            collected/${{ env.APP_NAME }}_*_linux_*   
             collected/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
