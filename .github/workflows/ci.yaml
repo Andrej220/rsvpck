@@ -1,0 +1,97 @@
+name: CI & Release 
+
+on:
+  push:
+    branches: [ "**" ]          # run tests 
+    tags: [ "v*.*.*" ]          # trigger on version tag
+  pull_request:                  # run tests on pull request
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+
+      - name: Cache Go modules/build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      - name: Go vet & test (race)
+        run: |
+          go vet ./...
+          go test ./... -race -count=1 -v
+
+  build_release:
+    name: Build & Release on tag
+    if: ${{ github.ref_type == 'tag' }}
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        goos:   [ linux, windows ]
+        goarch: [ amd64, arm64 ]
+    env:
+      CGO_ENABLED: "0"
+      APP_NAME: rsvpck                 
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0               # TODO: changelogs
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+
+      - name: Version from tag
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
+        run: |
+          mkdir -p dist
+          base="${{ env.APP_NAME }}_${{ steps.ver.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}"
+          bin="$base"
+          [[ "${{ matrix.goos }}" == "windows" ]] && bin="${base}.exe"
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            go build -trimpath -ldflags "-s -w -X main.version=${{ steps.ver.outputs.version }}" \
+              -o "dist/${bin}" ./...
+
+      - name: Package archives
+        run: |
+          cd dist
+          for f in *; do
+            [[ -f "$f" && "$f" != *.txt ]] || continue
+            if [[ "$f" == *.exe ]]; then
+              zip "${f%.exe}.zip" "$f"
+            else
+              tar czf "${f}.tar.gz" "$f"
+            fi
+          done
+          sha256sum * > SHA256SUMS.txt
+
+      - name: Create/Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.version }}
+          name:     ${{ steps.ver.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          make_latest: true
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
