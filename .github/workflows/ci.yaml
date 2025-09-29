@@ -78,7 +78,7 @@ jobs:
           sha256sum * > SHA256SUMS.txt
 
       - name: Upload build artifacts
-        uses: actions/collected-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: "${{ matrix.goos }}-${{ matrix.goarch }}"
           path: |
