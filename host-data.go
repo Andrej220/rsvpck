@@ -46,7 +46,7 @@ func getRoutePath() NetTestResult{
 
 	cmd := exec.CommandContext(ctx, "ip", "route", "show")
 	b, err := cmd.CombinedOutput()
-	
+
 	if err != nil {
 		result.Status = StatusFail
 		result.Details = "Failed to get routing table"
@@ -54,7 +54,7 @@ func getRoutePath() NetTestResult{
 		return result
 	}
 
-	result.Status = StatusPass
+	result.Status = StatusUnknown
 	result.Details = indentMultiline(string(b))
 	return result
 }
