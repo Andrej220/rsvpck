@@ -272,5 +272,5 @@ func Test_PrintNetTestResult_Smoke(t *testing.T) {
 	data := []NetTestResult{
 		{TestName: "A", TestShortName: "a", Status: StatusPass, Details: "ok"},
 	}
-	PrintNetTestResult(data, cfg)
+	PrintNetTestResult(data, *cfg)
 }

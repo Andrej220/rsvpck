@@ -10,7 +10,7 @@ import (
 )
 
 func testDNSResolution(domain string) NetTestResult {
-    result := NetTestResult{TestName: "DNS Resolution", TestShortName: "DNS"}
+    result := NetTestResult{TestName: "DNS Resolution", TestShortName: "DNS Resolution"}
 
 	domain, err := hostFromEndpoint(domain)
 	if err != nil{
@@ -51,20 +51,22 @@ func testPortAvailability(address string, timeout time.Duration) NetTestResult {
 
 	if err != nil{
         result.Status = StatusFail
-        result.Details = fmt.Sprintf("TCP connect failed to %s", address)
+        result.Details = fmt.Sprintf("%s", address)
         result.Error = err
+		result.Latency = timeoutMarker
 		return result
 	}
 		
 	_ = conn.Close()
 	result.Status = StatusPass
-	result.Details = fmt.Sprintf("TCP connect OK to %s", address)
+	result.Details = fmt.Sprintf("%s", address)
 
     return result
 }
 
 func testInternetConnectivity(config *NetTestConfig) NetTestResult {
-    result := NetTestResult{TestName: "Internet Connectivity", TestShortName: "Internet"}
+    result := NetTestResult{TestName: "Internet Connectivity", 
+	                        TestShortName: "Internet: " + internetConnectivityTestIP}
 
     start := time.Now()
     conn, err := net.DialTimeout("tcp", internetConnectivityTestIP, config.Timeout)
@@ -108,13 +110,14 @@ result := NetTestResult{
 		result.Status = StatusFail
 		result.Details = fmt.Sprintf("Cannot reach %s", endpoint)
 		result.Error = err
+		result.Latency = timeoutMarker
 		return result
 	}
 	resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
 		result.Status = StatusPass
-		result.Details = fmt.Sprintf("Connected successfully, %s", endpoint)
+		result.Details = fmt.Sprintf("%s", endpoint)
 		return result
 	} 
 
@@ -126,7 +129,7 @@ result := NetTestResult{
 func testProxyHTTP(proxyAddr string, targetURL string, timeout time.Duration) NetTestResult {
     result := NetTestResult{
         TestName: fmt.Sprintf("Proxy via %s", proxyAddr),
-		TestShortName: "Proxy",
+		TestShortName: "Proxy: " + proxyAddr,
     }
 
     proxyURL, err := url.Parse("http://" + proxyAddr)
@@ -142,22 +145,24 @@ func testProxyHTTP(proxyAddr string, targetURL string, timeout time.Duration) Ne
 
     start := time.Now()
     resp, err := client.Get(targetURL) 
+	result.Latency = time.Since(start)
+
     if err != nil {
         result.Status = StatusFail
-        result.Details = fmt.Sprintf("Cannot reach %s via proxy %s", targetURL, proxyAddr)
+        result.Details = fmt.Sprintf("%s", targetURL)
         result.Error = err
+		result.Latency = timeoutMarker
         return result
     }
     defer resp.Body.Close()
 
-    result.Latency = time.Since(start)
 
     if resp.StatusCode == http.StatusOK {
         result.Status = StatusPass
-        result.Details = fmt.Sprintf("Proxy %s connected successfully to %s", proxyAddr, targetURL)
+        result.Details = fmt.Sprintf("%s", targetURL)
     } else {
         result.Status = StatusWarning
-        result.Details = fmt.Sprintf("Proxy %s returned HTTP %d when connecting to %s", proxyAddr, resp.StatusCode, targetURL)
+        result.Details = fmt.Sprintf("%s returned HTTP %d when connecting to %s", proxyAddr, resp.StatusCode, targetURL)
     }
 
     return result

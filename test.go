@@ -3,23 +3,19 @@ package main
 import (
 	"time"
 	"fmt"
-	"strings"
+	"os"
+	"github.com/fatih/color"
+	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 )
-
-const (
-	red   = "\033[31m"
-	green = "\033[32m"
-	reset = "\033[0m"
-)
-
-const delimeterLength = 50
 
 type NetTestConfig struct {
 	SiteID          string
+	SN				string
 	HostName		string
 	TestDate 		time.Time
     Timeout         time.Duration
-    CheckProxies     []string
+    CheckProxies    []string
 	CheckEndpoints  []string
 }
 
@@ -37,7 +33,6 @@ func (c *NetTestConfig) String() string{
 
 	out := fmt.Sprintf("RSvP Connectivity Diagnostic - Site uuid: %s, \nHost name: %s, \nDate: %s ", 
 						c.SiteID, c.HostName, c.TestDate.Format("2006-01-02 15:04:05"))
-
 	return out
 }
 
@@ -52,31 +47,68 @@ func (r *NetTestResult)String() string{
 		msg = r.ErrMsg
 	}
 
-	var statusColored string
-	switch r.Status {
-	case StatusFail:
-		statusColored = red + r.Status.String() + reset
-		//msg = red + msg + reset
-	case StatusPass:
-		statusColored = green + r.Status.String() + reset
-		//msg = green + msg + reset
-	default:
-		statusColored = r.Status.String() 
-	}
-
-	return fmt.Sprintf("%s: %s \n\tlatency: %s \n\t%s",
-		r.TestName, statusColored, lat, msg)
+	return fmt.Sprintf("%s: \t\t%s latency: %s %s",
+		r.TestName, r.Status.String(), lat, msg)
 }
 
 func (r *NetTestResult) MarshalText() ([]byte, error) {
 	return []byte(r.String()), nil
 }
 
-func PrintNetTestResult(data []NetTestResult, config *NetTestConfig) {
-	fmt.Println(config.String())
-	fmt.Println(strings.Repeat("=", delimeterLength))
-	for _, v := range(data){
-		fmt.Println(v.String())
-		fmt.Println(strings.Repeat("", delimeterLength))
-	}
+func PrintNetTestResult(results []NetTestResult, cfg NetTestConfig) {
+
+	table := tablewriter.NewTable(os.Stdout,
+        tablewriter.WithAlignment([]tw.Align{tw.AlignLeft, tw.AlignLeft, tw.AlignRight, tw.AlignLeft}),  
+        tablewriter.WithRowAutoWrap(tw.WrapNormal),    
+        tablewriter.WithHeaderAutoWrap(tw.WrapTruncate), 
+        tablewriter.WithMaxWidth(400),                
+    )
+
+    table.Header("Test", "Status", "Latency", "Details")
+
+    green := color.New(color.FgGreen).SprintFunc()
+    red   := color.New(color.FgRed).SprintFunc()
+    yellow:= color.New(color.FgYellow).SprintFunc()
+    gray  := color.New(color.FgHiBlack).SprintFunc()  
+
+    passCount, failCount, otherCount := 0, 0, 0
+
+    for _, res := range results {
+        statusText := res.Status.String()  
+        switch res.Status {
+        case StatusPass:
+             statusText = green("✓ ") + green(res.Status)   
+             passCount++
+        case StatusFail:
+             statusText = red("✗ ") + red(res.Status)     
+             failCount++
+        case StatusSkipped:
+             statusText = gray("⦿ ") + gray(res.Status)    
+             otherCount++
+        case StatusWarning :
+             statusText = yellow("⚠ ") + yellow(res.Status)  
+             otherCount++
+        default:
+             statusText = gray(res.Status)    
+             otherCount++
+        }
+
+        latStr := latencyToString(res.Latency)
+        table.Append(res.TestShortName, statusText, latStr, res.Details)
+    }
+
+    table.Configure(func(cfg *tablewriter.Config) {
+        cfg.Footer.Alignment.Global = tw.AlignLeft
+    })
+
+    summaryFooter := []any{
+        "Summary", 
+        fmt.Sprintf("PASS: %d", passCount), 
+        fmt.Sprintf("FAIL: %d", failCount), 
+    }
+    table.Footer(summaryFooter...)
+
+    if err := table.Render(); err != nil {
+        fmt.Fprintf(os.Stderr, "Error rendering table: %v\n", err)
+    }
 }
