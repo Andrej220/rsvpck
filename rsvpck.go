@@ -23,8 +23,8 @@ var endpoints = []string{
 var proxies = []string{
                 "54.154.45.26:443",
                 "82.136.152.78:8002",
-                //"10.25.0.20:8080",
-                //"152.2.1.251:8002",
+                "10.25.0.20:8080",
+                "152.2.1.251:8002",
 }
 
 func RunRSVPDiagnostics(config *NetTestConfig) []NetTestResult {
