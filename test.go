@@ -112,3 +112,22 @@ func PrintNetTestResult(results []NetTestResult, cfg NetTestConfig) {
         fmt.Fprintf(os.Stderr, "Error rendering table: %v\n", err)
     }
 }
+
+func printText(text string, header string){
+	table := tablewriter.NewTable(os.Stdout,
+        tablewriter.WithAlignment([]tw.Align{tw.AlignLeft, tw.AlignLeft, tw.AlignRight, tw.AlignLeft}),  
+        tablewriter.WithRowAutoWrap(tw.WrapNormal),    
+        tablewriter.WithHeaderAutoWrap(tw.WrapTruncate), 
+        tablewriter.WithMaxWidth(400),                
+    )
+    table.Header(header)
+    table.Append(text)
+
+    table.Configure(func(cfg *tablewriter.Config) {
+        cfg.Footer.Alignment.Global = tw.AlignLeft
+    })
+
+    if err := table.Render(); err != nil {
+        fmt.Fprintf(os.Stderr, "Error rendering table: %v\n", err)
+    }
+}

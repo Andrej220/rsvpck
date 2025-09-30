@@ -59,6 +59,13 @@ func RunRSVPDiagnostics(config *NetTestConfig) []NetTestResult {
     return results
 }
 
+func collectHostData()[]string{
+
+    var results []string
+    results = append(results, getRoutePath().Details)
+    return results
+}
+
 func main(){
 
     for _, arg := range os.Args[1:] {
@@ -78,4 +85,8 @@ func main(){
     }  
     results := RunRSVPDiagnostics(config)
     PrintNetTestResult(results, *config)
+    hostData := collectHostData()
+    for _,s := range(hostData){
+        printText(s,"Routing table")
+    } 
 }
