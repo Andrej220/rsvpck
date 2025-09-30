@@ -30,16 +30,25 @@ var proxies = []string{
 func RunRSVPDiagnostics(config *NetTestConfig) []NetTestResult {
     var results []NetTestResult
 
+    fmt.Println("Checking Internet connectivity")
+
     results = append(results, testInternetConnectivity(config))
     for _, s := range(config.CheckEndpoints){
         results = append(results, testDNSResolution(s))
     }
+
+    fmt.Println("Checking endpoints")
+
     for _, s := range(config.CheckEndpoints){
         results = append(results, testEndpoints(s, config.Timeout))
     }
     for _, px := range(config.CheckProxies){
         results = append(results, testPortAvailability(px,config.Timeout))
     }
+
+    fmt.Println("Testing proxies")
+
+
     for _, px := range(config.CheckProxies){
         for _, s := range(config.CheckEndpoints){
             results = append(results, testProxyHTTP(px, s, config.Timeout))
