@@ -104,5 +104,15 @@ func main(){
     hostData := collectHostData()
     for _,s := range(hostData){
         printText(s,"Routing table")
-    } 
+    }
+
+    
+    tls, err := CheckTLS("insite-eu.gehealthcare.com:443","insite-eu.gehealthcare.com", 5* time.Second)
+    if err != nil {
+        fmt.Println("Failed to read TLS certificates")
+    } else{
+        printText(tls,"Certificates")
+    }
+    
+    
 }
