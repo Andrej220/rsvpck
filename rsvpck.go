@@ -27,6 +27,11 @@ var proxies = []string{
                 "152.2.1.251:8002",
 }
 
+var toping = []string{  "150.2.101.89",
+                        "82.136.152.65",
+                        "8.8.8.8",
+                    }
+
 func RunRSVPDiagnostics(config *NetTestConfig) []NetTestResult {
     var results []NetTestResult
 
@@ -66,6 +71,15 @@ func collectHostData()[]string{
     return results
 }
 
+func pingProxies( hosts []string) []NetTestResult{
+    fmt.Println("Pinging...")
+    var results []NetTestResult
+    for _, h := range(hosts){
+        results = append(results, pingAProxy(h))
+    }
+    return results
+}
+
 func main(){
 
     for _, arg := range os.Args[1:] {
@@ -85,6 +99,9 @@ func main(){
     }  
     results := RunRSVPDiagnostics(config)
     PrintNetTestResult(results, *config)
+    results = pingProxies(toping)
+    PrintNetTestResult(results, *config)
+
     hostData := collectHostData()
     for _,s := range(hostData){
         printText(s,"Routing table")

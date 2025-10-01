@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"crypto/tls"
 )
 
 func testDNSResolution(domain string) NetTestResult {
@@ -32,6 +33,67 @@ func testDNSResolution(domain string) NetTestResult {
     }
     
     return result
+}
+
+func pingAProxy(host string) NetTestResult {
+    result := NetTestResult{TestName: "Ping", TestShortName: "Ping"}
+
+	start := time.Now()
+    res := Ping(host, 3, time.Second)
+	result.Latency = time.Since(start)
+
+    if !res {
+        result.Status = StatusFail
+        result.Details = fmt.Sprintf("%s ", host)
+		result.Latency = timeoutMarker
+    } else {
+		result.Status = StatusPass
+        result.Details = fmt.Sprintf("%s ", host)
+    }
+    
+    return result
+}
+
+
+func checkCertificates(host string)string{
+		client := &http.Client{
+		Timeout: 5 * time.Second, // total request timeout
+	}
+
+	resp, err := client.Get(host)
+	if err != nil {
+		return fmt.Sprint("TLS/HTTP check failed:", err)
+	}
+	defer resp.Body.Close()
+
+	return fmt.Sprint("OK, certificate is valid. HTTP status:", resp.Status)
+}
+
+func CheckTLS(addr, serverName string, timeout time.Duration) (string, error) {
+	dialer := &net.Dialer{Timeout: timeout}
+
+	tlsCfg := &tls.Config{
+		ServerName: serverName, // important for hostname verification & SNI
+	}
+
+	conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsCfg)
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+
+	var sb strings.Builder
+	state := conn.ConnectionState()
+
+	for i, cert := range state.PeerCertificates {
+		sb.WriteString(fmt.Sprintf("Certificate #%d:\n", i))
+		sb.WriteString(fmt.Sprintf("   Subject    : %s\n", cert.Subject))
+		sb.WriteString(fmt.Sprintf("   Issuer     : %s\n", cert.Issuer))
+		sb.WriteString(fmt.Sprintf("   Valid from : %s\n", cert.NotBefore.Format("2006-01-02")))
+		sb.WriteString(fmt.Sprintf("   Valid until: %s\n\n", cert.NotAfter.Format("2006-01-02")))
+	}
+
+	return sb.String(), nil
 }
 
 // Address must include port
