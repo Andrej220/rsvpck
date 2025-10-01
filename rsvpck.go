@@ -59,7 +59,6 @@ func RunRSVPDiagnostics(config *NetTestConfig) []NetTestResult {
             results = append(results, testProxyHTTP(px, s, config.Timeout))
         }
     }
-    //results = append(results, getRoutePath())
 
     return results
 }
