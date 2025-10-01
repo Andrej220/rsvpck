@@ -6,6 +6,7 @@ import(
 	"strings"
 	"context"
 	"time"
+	"runtime"
 )
 
 func getMachineUUID() string{
@@ -45,6 +46,18 @@ func getRoutePath() NetTestResult{
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "ip", "route", "show")
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("route", "print")
+	case "linux":
+		cmd = exec.Command("ip", "r")
+	case "darwin": 
+		cmd = exec.Command("netstat", "-rn")
+	default:
+		
+	}
+
 	b, err := cmd.CombinedOutput()
 
 	if err != nil {
