@@ -48,3 +48,5 @@ func hostFromEndpoint(ep string) (string, error){
     }
     return u.Hostname(), nil
 }
+
+func btoi(b bool) int { if b { return 1 }; return 0 }
