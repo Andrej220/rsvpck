@@ -13,8 +13,8 @@ const (
 )
 
 var version = "dev"
-var internetConnectivityTestIP = "8.8.8.8:53"
-var internetIP = []string {"8.8.8.8","1.1.1.1"}
+var internetConnectivityTestIP = "google.com:443"//"8.8.8.8:53"
+var internetIP = []string {"8.8.8.8","1.1.1.1", "google.com"}
 
 var endpoints = []string{
                 "https://insite-eu.gehealthcare.com",
@@ -39,6 +39,10 @@ func RunInternetTest(config *NetTestConfig) []NetTestResult {
 
     fmt.Println("Internet connectivity")
 
+    for _, h := range(internetIP){
+        results = append(results, pingAProxy(h))
+    }
+
     results = append(results, testInternetConnectivity(config))
     for _, s := range(config.CheckEndpoints){
         results = append(results, testDNSResolution(s))
@@ -57,9 +61,6 @@ func RunInternetTest(config *NetTestConfig) []NetTestResult {
         }
     }
  
-    for _, h := range(internetIP){
-        results = append(results, pingAProxy(h))
-    }
 
     return results
 }

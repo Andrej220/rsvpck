@@ -133,8 +133,8 @@ func testPortAvailability(address string, timeout time.Duration) NetTestResult {
 }
 
 func testInternetConnectivity(config *NetTestConfig) NetTestResult {
-    result := NetTestResult{TestName: "Internet Connectivity", 
-	                        TestShortName: "Internet: " + internetConnectivityTestIP}
+    result := NetTestResult{TestName: "HTTPS", 
+	                        TestShortName: "HTTPS: " + internetConnectivityTestIP}
 
     start := time.Now()
     conn, err := net.DialTimeout("tcp", internetConnectivityTestIP, config.Timeout)
