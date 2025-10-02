@@ -37,7 +37,7 @@ var proxyToPing = []string{  "150.2.101.89",
 func RunInternetTest(config *NetTestConfig) []NetTestResult {
     var results []NetTestResult
 
-    fmt.Println("Internet connectivity")
+    //fmt.Println("Internet connectivity")
 
     for _, h := range(internetIP){
         results = append(results, pingAProxy(h))
@@ -66,7 +66,7 @@ func RunInternetTest(config *NetTestConfig) []NetTestResult {
 }
 
 func runVPNtest(hosts []string)[]NetTestResult{
-    fmt.Println("VPN")
+    //fmt.Println("VPN")
     var results []NetTestResult
     for _, h := range(hosts){
         results = append(results, pingAProxy(h))
@@ -76,7 +76,7 @@ func runVPNtest(hosts []string)[]NetTestResult{
 
 func runProxyTest(config *NetTestConfig)[]NetTestResult{
     var results []NetTestResult
-    fmt.Println("Proxy")
+    //mt.Println("Proxy")
 
     for _, px := range(config.CheckProxies){
         for _, s := range(config.CheckEndpoints){
@@ -113,17 +113,17 @@ func main(){
     fmt.Printf("SID: %s\n\n", config.SiteID)
 
     results := RunInternetTest(config)
-    PrintNetTestResult(results, *config)
+    PrintNetTestResult("Internet",results, *config)
 
     results = runProxyTest(config)
-    PrintNetTestResult(results, *config) 
+    PrintNetTestResult("Proxy",results, *config) 
 
     results = runVPNtest(proxyToPing)
-    PrintNetTestResult(results, *config)
+    PrintNetTestResult("VPN",results, *config)
 
     hostData := collectHostData()
     for _,s := range(hostData){
-        printText(s,"Routing table")
+        printText(s,"Default route")
     }
 
     
@@ -131,7 +131,7 @@ func main(){
     if err != nil {
         fmt.Println("Failed to read TLS certificates")
     } else{
-        printText(tls,"Certificates")
+        printText(tls,"Certificate")
     }
     
     

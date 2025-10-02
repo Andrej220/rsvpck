@@ -55,7 +55,7 @@ func (r *NetTestResult) MarshalText() ([]byte, error) {
 	return []byte(r.String()), nil
 }
 
-func PrintNetTestResult(results []NetTestResult, cfg NetTestConfig) {
+func PrintNetTestResult(name string, results []NetTestResult, cfg NetTestConfig) {
 
 	table := tablewriter.NewTable(os.Stdout,
         tablewriter.WithAlignment([]tw.Align{tw.AlignLeft, tw.AlignLeft, tw.AlignRight, tw.AlignLeft}),  
@@ -64,7 +64,7 @@ func PrintNetTestResult(results []NetTestResult, cfg NetTestConfig) {
         tablewriter.WithMaxWidth(400),                
     )
 
-    table.Header("Test", "Status", "Latency", "Details")
+    table.Header(name, "Status", "Latency", "Details")
 
     green := color.New(color.FgGreen).SprintFunc()
     red   := color.New(color.FgRed).SprintFunc()
@@ -101,12 +101,12 @@ func PrintNetTestResult(results []NetTestResult, cfg NetTestConfig) {
         cfg.Footer.Alignment.Global = tw.AlignLeft
     })
 
-    summaryFooter := []any{
-        "Summary", 
-        fmt.Sprintf("PASS: %d", passCount), 
-        fmt.Sprintf("FAIL: %d", failCount), 
-    }
-    table.Footer(summaryFooter...)
+    //summaryFooter := []any{
+    //    "Summary", 
+    //    fmt.Sprintf("PASS: %d", passCount), 
+    //    fmt.Sprintf("FAIL: %d", failCount), 
+    //}
+    //table.Footer(summaryFooter...)
 
     if err := table.Render(); err != nil {
         fmt.Fprintf(os.Stderr, "Error rendering table: %v\n", err)
