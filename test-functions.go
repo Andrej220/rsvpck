@@ -39,16 +39,22 @@ func pingAProxy(host string) NetTestResult {
     result := NetTestResult{TestName: "Ping", TestShortName: "Ping"}
 
 	start := time.Now()
-    res := Ping(host, 3, time.Second)
+    ok, _, err := PingHostCmd(host, 1, 5 * time.Second)
 	result.Latency = time.Since(start)
+	if err != nil{
+		result.Status = StatusUnknown
+        result.Details = fmt.Sprintf("%s ", host)
+		result.Latency = 0
+	}
 
-    if !res {
+    if !ok {
         result.Status = StatusFail
         result.Details = fmt.Sprintf("%s ", host)
 		result.Latency = timeoutMarker
     } else {
 		result.Status = StatusPass
         result.Details = fmt.Sprintf("%s ", host)
+		//result.Latency = 0
     }
     
     return result

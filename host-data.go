@@ -10,6 +10,13 @@ import(
 )
 
 func getMachineUUID() string{
+
+	cmd := exec.Command("/opt/InSite/InSiteAgent/bin/AgentStatus")
+	b, err := cmd.CombinedOutput()
+	if err == nil {
+		return string(b)
+	}
+
 	if b, err := os.ReadFile("/etc/machine-id"); err == nil {
 		s := strings.TrimSpace(string(b))
 		if s != "" {
@@ -45,15 +52,12 @@ func getRoutePath() NetTestResult{
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "ip", "route", "show")
-
+	var cmd *exec.Cmd 
 	switch runtime.GOOS {
 	case "windows":
-		cmd = exec.Command("route", "print")
+		cmd = exec.CommandContext(ctx, "cmd", "/C", "route print -4 | findstr 0.0.0.0")
 	case "linux":
-		cmd = exec.Command("ip", "r")
-	case "darwin": 
-		cmd = exec.Command("netstat", "-rn")
+		cmd = exec.CommandContext(ctx, "ip", "r", "show",  "default")
 	default:
 		
 	}

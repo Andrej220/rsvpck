@@ -7,75 +7,87 @@ import(
 )
 
 const (
-    timeout = 5 * time.Second
+    timeout = 2 * time.Second
     applicationName = "RSvP connectivity checker"
     timeoutMarker = time.Hour
 )
 
 var version = "dev"
 var internetConnectivityTestIP = "8.8.8.8:53"
+var internetIP = []string {"8.8.8.8","1.1.1.1"}
 
 var endpoints = []string{
                 "https://insite-eu.gehealthcare.com",
                 //"https://insite.gehealthcare.com",
 }
+var internetProxy = []string{
+                            "54.154.45.26:443",
+                            }
 
 var proxies = []string{
-                "54.154.45.26:443",
                 "82.136.152.78:8002",
                 "10.25.0.20:8080",
                 "152.2.1.251:8002",
 }
 
-var toping = []string{  "150.2.101.89",
+var proxyToPing = []string{  "150.2.101.89",
                         "82.136.152.65",
-                        "8.8.8.8",
                     }
 
-func RunRSVPDiagnostics(config *NetTestConfig) []NetTestResult {
+func RunInternetTest(config *NetTestConfig) []NetTestResult {
     var results []NetTestResult
 
-    fmt.Println("Checking Internet connectivity")
+    fmt.Println("Internet connectivity")
 
     results = append(results, testInternetConnectivity(config))
     for _, s := range(config.CheckEndpoints){
         results = append(results, testDNSResolution(s))
     }
 
-    fmt.Println("Checking endpoints")
-
     for _, s := range(config.CheckEndpoints){
         results = append(results, testEndpoints(s, config.Timeout))
     }
-    for _, px := range(config.CheckProxies){
+    for _, px := range(internetProxy){
         results = append(results, testPortAvailability(px,config.Timeout))
     }
 
-    fmt.Println("Testing proxies")
+    for _, px := range(internetProxy){
+        for _, s := range(config.CheckEndpoints){
+            results = append(results, testProxyHTTP(px, s, config.Timeout))
+        }
+    }
+ 
+    for _, h := range(internetIP){
+        results = append(results, pingAProxy(h))
+    }
 
+    return results
+}
+
+func runVPNtest(hosts []string)[]NetTestResult{
+    fmt.Println("VPN")
+    var results []NetTestResult
+    for _, h := range(hosts){
+        results = append(results, pingAProxy(h))
+    }
+    return results
+}
+
+func runProxyTest(config *NetTestConfig)[]NetTestResult{
+    var results []NetTestResult
+    fmt.Println("Proxy")
 
     for _, px := range(config.CheckProxies){
         for _, s := range(config.CheckEndpoints){
             results = append(results, testProxyHTTP(px, s, config.Timeout))
         }
     }
-
     return results
 }
 
 func collectHostData()[]string{
-
     var results []string
     results = append(results, getRoutePath().Details)
-    return results
-}
-
-func pingProxies( hosts []string) []NetTestResult{
-    fmt.Println("Pinging...")
-    var results []NetTestResult
-    for _, h := range(hosts){
-        results = append(results, pingAProxy(h))
-    }
     return results
 }
 
@@ -96,9 +108,16 @@ func main(){
             CheckProxies: proxies,
             CheckEndpoints: endpoints, 
     }  
-    results := RunRSVPDiagnostics(config)
+    fmt.Printf("%s, Version: %s\n", applicationName, version)
+    fmt.Printf("SID: %s\n\n", config.SiteID)
+
+    results := RunInternetTest(config)
     PrintNetTestResult(results, *config)
-    results = pingProxies(toping)
+
+    results = runProxyTest(config)
+    PrintNetTestResult(results, *config) 
+
+    results = runVPNtest(proxyToPing)
     PrintNetTestResult(results, *config)
 
     hostData := collectHostData()
