@@ -27,7 +27,7 @@ var internetProxy = []string{
 var proxies = []string{
                 "82.136.152.78:8002",
                 "10.25.0.20:8080",
-                "152.2.1.251:8002",
+                "150.2.1.251:8002",
 }
 
 var proxyToPing = []string{  "150.2.101.89",
