@@ -33,7 +33,7 @@ func AnalyzeConnectivity(probes []Probe, config NetTestConfig) ConnectivityResul
 	var mode ConnectivityMode
 	if vpnSuccess {
 		mode = ModeViaVPN
-	} else if directSuccess && (dnsSuccess || !config.HasDNSCheck()) {
+	} else if directSuccess && dnsSuccess  {
 		mode = ModeDirect
 	} else if proxySuccess {
 		mode = ModeViaProxy

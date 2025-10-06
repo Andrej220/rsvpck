@@ -36,19 +36,10 @@ func main(){
 
 	// Render output
 	//render.JSON(os.Stdout, result)
-
 }
 
 
 func buildNetTestConfig(proxyURL string) (domain.NetTestConfig, error) {
-	// VPN endpoints (TCP, internal IPs)
-
-	dnsEndpoints := []domain.Endpoint{
-		domain.MustNewDNSEndpoint("insite-eu.gehealthcare.com", domain.EndpointTypePublic,"DNS resolution insite-eu"),
-		domain.MustNewDNSEndpoint("insite.gehealthcare.com", domain.EndpointTypePublic,"DNS resolution insite-eu"),
-		domain.MustNewDNSEndpoint("google.com", domain.EndpointTypePublic,"DNS resolution google.com"),
-		domain.MustNewDNSEndpoint("cloudflare.com", domain.EndpointTypePublic,"DNS resolution claudflare.com"),
-	}
 
 	vpnEndpoints := []domain.Endpoint{
 		domain.MustNewICMPEndpoint("150.2.101.89", domain.EndpointTypeVPN,"ping VPN"),
@@ -57,19 +48,21 @@ func buildNetTestConfig(proxyURL string) (domain.NetTestConfig, error) {
 		domain.MustNewTCPEndpoint("82.136.152.65:443", domain.EndpointTypeVPN, "VPN endpoint 2"),
 	}
 
-	// Direct internet endpoints (TCP to public IPs/hosts)
 	directEndpoints := []domain.Endpoint{
+		domain.MustNewDNSEndpoint("insite-eu.gehealthcare.com", domain.EndpointTypePublic,"DNS resolution insite-eu"),
+		domain.MustNewDNSEndpoint("insite.gehealthcare.com", domain.EndpointTypePublic,"DNS resolution insite-eu"),
+		domain.MustNewDNSEndpoint("google.com", domain.EndpointTypePublic,"DNS resolution google.com"),
+		domain.MustNewDNSEndpoint("cloudflare.com", domain.EndpointTypePublic,"DNS resolution claudflare.com"),
 		domain.MustNewICMPEndpoint("google.com", domain.EndpointTypePublic,"ping google.com"),
 		domain.MustNewTCPEndpoint("google.com:443", domain.EndpointTypePublic, "Google HTTPS"),
-	}
-
-	// http or https endpoints
-	httpEndpoints := []domain.Endpoint{
 		domain.MustNewHTTPEndpoint("https://insite-eu.gehealthcare.com:443", 
 									domain.EndpointTypePublic, 
 									false,
 									"",
 									"GE Healthcare InSite (direct Internet)"),
+	}
+	proxyEndpoints := []domain.Endpoint{
+		domain.MustNewICMPEndpoint("54.154.45.26", domain.EndpointTypePublic,"Ping Internet proxy"),
 		domain.MustNewHTTPEndpoint("https://insite-eu.gehealthcare.com:443", 
 									domain.EndpointTypePublic, 
 									true,
@@ -80,8 +73,7 @@ func buildNetTestConfig(proxyURL string) (domain.NetTestConfig, error) {
 	return domain.NewNetTestConfig(
 		vpnEndpoints,
 		directEndpoints,
-		httpEndpoints,
-		dnsEndpoints,
+		proxyEndpoints,
 		proxyURL,       // e.g. "http://proxy.corp:8080"
 	)
 }

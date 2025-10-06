@@ -31,8 +31,7 @@ func (e *Executor) Run(ctx context.Context, config domain.NetTestConfig) domain.
 
 	probes = append(probes, e.runEndpointCheck(ctx, config.VPNEndpoints)...)
 	probes = append(probes, e.runEndpointCheck(ctx, config.DirectEndpoints)...)
-	probes = append(probes, e.runEndpointCheck(ctx,config.DNSEndpoints)...)
-	probes = append(probes, e.runEndpointCheck(ctx,config.HTTPEndpoints)...)
+	probes = append(probes, e.runEndpointCheck(ctx,config.ProxyEndpoints)...)
 
     return domain.AnalyzeConnectivity(probes, config)
 }

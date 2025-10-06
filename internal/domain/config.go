@@ -6,16 +6,14 @@ type NetTestConfig struct {
 
 	VPNEndpoints 		[]Endpoint
 	DirectEndpoints 	[]Endpoint
-	HTTPEndpoints 		[]Endpoint
-	DNSEndpoints 		[]Endpoint
+	ProxyEndpoints 		[]Endpoint
 	ProxyURL 			string
 }
 
 func NewNetTestConfig(
 	vpnEndpoints 	[]Endpoint,
 	directEndpoints []Endpoint,
-	HTTPEndpoints 	[]Endpoint,
-	DnsEndpoints    []Endpoint,
+	ProxyEndpoints 	[]Endpoint,
 	proxyURL 		string,
 ) (NetTestConfig, error) {
 	for _, ep := range vpnEndpoints {
@@ -23,7 +21,7 @@ func NewNetTestConfig(
 			return NetTestConfig{}, errors.New("all VPN endpoints must be of type VPN")
 		}
 		if ep.TargetType != TargetTypeTCP  && ep.TargetType != TargetTypeICMP{
-			return NetTestConfig{}, errors.New("VPN endpoints must be TCP (host:port) or ICMP")
+			return NetTestConfig{}, errors.New("VPN endpoints must be TCP or ICMP")
 		}
 	}
 
@@ -31,24 +29,30 @@ func NewNetTestConfig(
 		if ep.Type != EndpointTypePublic {
 			return NetTestConfig{}, errors.New("direct endpoints must be of type Public")
 		}
-		if (ep.TargetType != TargetTypeTCP && ep.TargetType != TargetTypeICMP) {
-			return NetTestConfig{}, errors.New("direct endpoints must be TCP (host:port) or ICMP type")
-		}
+		switch ep.TargetType {
+		case TargetTypeTCP, TargetTypeICMP, TargetTypeDNS, TargetTypeHTTP:
+		default:
+			return NetTestConfig{}, errors.New("direct endpoints must be TCP, ICMP, DNS, or HTTP")
+		}	
 	}
-	for _, ep := range HTTPEndpoints{
+	for _, ep := range ProxyEndpoints{
 		if ep.Type != EndpointTypePublic {
 			return NetTestConfig{}, errors.New("proxy endpoint must be of type Public")
 		}
-		if ep.TargetType != TargetTypeHTTP {
-			return NetTestConfig{}, errors.New("proxy endpoint must be HTTP (URL)")
+		if !ep.RequiresProxy{
+			return NetTestConfig{}, errors.New("proxy endpoint requires proxy server")
+		}
+		switch ep.TargetType {
+		case TargetTypeICMP, TargetTypeDNS, TargetTypeHTTP:
+		default:
+			return NetTestConfig{}, errors.New("proxy endpoints must be ICMP or HTTP")
 		}
 	}
 
 	return NetTestConfig{
 		VPNEndpoints:       vpnEndpoints,
 		DirectEndpoints: 	directEndpoints,
-		HTTPEndpoints:  	HTTPEndpoints,
-		DNSEndpoints:       DnsEndpoints,
+		ProxyEndpoints:  	ProxyEndpoints,
 		ProxyURL:           proxyURL,
 	}, nil
 }
@@ -62,12 +66,8 @@ func (c NetTestConfig) HasDirectChecks() bool {
 	return len(c.DirectEndpoints) > 0
 }
 
-func (c NetTestConfig) HasProxy() bool {
-	return len(c.HTTPEndpoints) > 0
-}
-
-func (c NetTestConfig) HasDNSCheck() bool {
-	return len(c.DNSEndpoints) > 0
+func (c NetTestConfig) HasProxyChecks() bool {
+	return len(c.ProxyEndpoints) > 0
 }
 
 func (c NetTestConfig) HasICMPChecks() bool {
