@@ -10,6 +10,7 @@ type Executor struct {
 	dnsChecker  domain.DNSChecker
 	httpChecker domain.HTTPChecker
 	icmpChecker domain.ICMPChecker
+	policy      domain.ExecutionPolicy
 }
 
 func NewExecutor(
@@ -17,23 +18,62 @@ func NewExecutor(
 	dnsChecker 	domain.DNSChecker,
 	httpChecker domain.HTTPChecker,
 	icmpChecker domain.ICMPChecker,
+	policy      domain.ExecutionPolicy,
 ) *Executor {
 	return &Executor{
 		tcpChecker:  tcpChecker,
 		dnsChecker:  dnsChecker,
 		httpChecker: httpChecker,
 		icmpChecker: icmpChecker,
+		policy:		 policy,
 	}
 }
 
 func (e *Executor) Run(ctx context.Context, config domain.NetTestConfig) domain.ConnectivityResult {
     var probes []domain.Probe
-
-	probes = append(probes, e.runEndpointCheck(ctx, config.VPNEndpoints)...)
-	probes = append(probes, e.runEndpointCheck(ctx, config.DirectEndpoints)...)
+	if e.policy == domain.PlicyOptimized{
+		probes = append(probes, e.runOptimizedChecks(ctx, config.DirectEndpoints)...)
+	} else{
+		probes = append(probes, e.runEndpointCheck(ctx, config.DirectEndpoints)...)
+	}
 	probes = append(probes, e.runEndpointCheck(ctx,config.ProxyEndpoints)...)
+	if e.policy == domain.PlicyOptimized{
+		probes = append(probes, e.runOptimizedChecks(ctx, config.VPNEndpoints)...)
+	} else {
+		probes = append(probes, e.runEndpointCheck(ctx, config.VPNEndpoints)...)
+	}
 
     return domain.AnalyzeConnectivity(probes, config)
+}
+
+func (e *Executor) runOptimizedChecks(ctx context.Context, endpoints []domain.Endpoint) []domain.Probe {
+	var probes []domain.Probe
+	var ipReachable bool
+
+	var ipEndpoints, otherEndpoints []domain.Endpoint
+	for _, ep := range endpoints {
+		if ep.TargetType == domain.TargetTypeICMP  {
+			ipEndpoints = append(ipEndpoints, ep)
+		} else {
+			otherEndpoints = append(otherEndpoints, ep)
+		}
+	}
+
+	ipProbes := e.runEndpointCheck(ctx, ipEndpoints)
+	probes = append(probes, ipProbes...)
+
+	for _, p := range ipProbes {
+		if p.IsSuccessful() {
+			ipReachable = true
+			break
+		}
+	}
+	if ipReachable {
+		otherProbes := e.runEndpointCheck(ctx, otherEndpoints)
+		probes = append(probes, otherProbes...)
+	}
+
+	return probes
 }
 
 func (e Executor)runEndpointCheck(ctx context.Context, endpoints []domain.Endpoint) []domain.Probe{

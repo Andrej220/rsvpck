@@ -20,7 +20,7 @@ var _ domain.ICMPChecker = (*Checker)(nil)
 func (c *Checker)CheckPingWithContext(ctx context.Context, ep domain.Endpoint) domain.Probe{
 
 	start := time.Now()
-	ok, output, err := pingHostCmd(ctx, ep.Target, 3)
+	ok, output, err := pingHostCmd(ctx, ep.Target, 1)
 	latencyMs := time.Since(start).Seconds() * 1000
 
 	if err != nil  || !ok {
@@ -44,7 +44,7 @@ func pingHostCmd(ctx context.Context, host string, attempts int) (bool, string, 
 	case "windows":
 		args = []string{"-n", fmt.Sprint(attempts), "-4", host}
 	default: // linux, darwin, *bsd
-		args = []string{"-c", fmt.Sprint(attempts), "-4", host}
+		args = []string{"-c", fmt.Sprint(attempts), "-4",host}
 	}
 
 	cmd := exec.CommandContext(ctx, "ping", args...)
