@@ -7,9 +7,11 @@ import (
 	"github.com/azargarov/rsvpck/internal/adapters/dns"
 	"github.com/azargarov/rsvpck/internal/adapters/http"
 	"github.com/azargarov/rsvpck/internal/adapters/icmp"
+	"github.com/azargarov/rsvpck/internal/adapters/render/text"
 	"fmt"
 	"time"
 	"context"
+	"os"
 )
 
 func main(){
@@ -30,12 +32,15 @@ func main(){
 	defer cancel()
 
 	result := executor.Run(ctx, config)
-	for _, r := range(result.Probes){
-			fmt.Println(r.String())
-	}
 
-	// Render output
-	//render.JSON(os.Stdout, result)
+	var renderer domain.Renderer
+	renderer = text.NewRenderer()
+	renderer.Render(os.Stdout, result)
+	fmt.Println("=======================================================")
+	renderer = text.NewTableRenderer()
+	if err := renderer.Render(os.Stdout,result); err != nil {
+    	fmt.Printf("Failed to render: %v", err)
+	}
 }
 
 
@@ -44,11 +49,11 @@ func buildNetTestConfig(proxyURL string) (domain.NetTestConfig, error) {
 	directEndpoints := []domain.Endpoint{
 		domain.MustNewICMPEndpoint("1.1.1.1", domain.EndpointTypePublic,"ping 1.1.1.1"),
 		domain.MustNewICMPEndpoint("8.8.8.8", domain.EndpointTypePublic,"ping 8.8.8.8"),
+		domain.MustNewICMPEndpoint("google.com", domain.EndpointTypePublic,"ping google.com"),
 		domain.MustNewDNSEndpoint("insite-eu.gehealthcare.com", domain.EndpointTypePublic,"DNS resolution insite-eu"),
 		domain.MustNewDNSEndpoint("insite.gehealthcare.com", domain.EndpointTypePublic,"DNS resolution insite-eu"),
 		domain.MustNewDNSEndpoint("google.com", domain.EndpointTypePublic,"DNS resolution google.com"),
 		domain.MustNewDNSEndpoint("cloudflare.com", domain.EndpointTypePublic,"DNS resolution claudflare.com"),
-		domain.MustNewICMPEndpoint("google.com", domain.EndpointTypePublic,"ping google.com"),
 		domain.MustNewTCPEndpoint("google.com:443", domain.EndpointTypePublic, "Google HTTPS"),
 		domain.MustNewHTTPEndpoint("https://insite-eu.gehealthcare.com:443", 
 									domain.EndpointTypePublic, 
@@ -57,7 +62,7 @@ func buildNetTestConfig(proxyURL string) (domain.NetTestConfig, error) {
 									"GE Healthcare InSite (direct Internet)"),
 	}
 	proxyEndpoints := []domain.Endpoint{
-		domain.MustNewICMPEndpoint("54.154.45.26", domain.EndpointTypePublic,"Ping Internet proxy"),
+		//domain.MustNewICMPEndpoint("54.154.45.26", domain.EndpointTypePublic,"Ping Internet proxy"),
 		domain.MustNewHTTPEndpoint("https://insite-eu.gehealthcare.com:443", 
 									domain.EndpointTypePublic, 
 									true,

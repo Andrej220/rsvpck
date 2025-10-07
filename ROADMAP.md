@@ -2,7 +2,7 @@
 
 ## v0.2.0 — DDD foundation + CLI UX
 - Domain model: 
-- Hexagonal architecture: ports/adapters for DNS, HTTP, ICMP, Proxy, Routing.
+- Hexagonal architecture: ports/adapters for DNS, HTTP, ICMP, Proxy
 - Output model: renderers (table/text/json) as adapters.
 - makefile
 - Concurrency model: worker pool for checks; timeouts & cancellation (context).

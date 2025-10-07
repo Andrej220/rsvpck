@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"io"
+)
 
 type TCPChecker interface {
 	CheckWithContext(ctx context.Context, ep Endpoint) Probe
@@ -17,4 +20,8 @@ type HTTPChecker interface {
 
 type ICMPChecker interface{
 	CheckPingWithContext(ctx context.Context, ep Endpoint) Probe
+}
+
+type Renderer interface {
+	Render(w io.Writer, result ConnectivityResult) error
 }
