@@ -39,9 +39,6 @@ func NewNetTestConfig(
 		if ep.Type != EndpointTypePublic {
 			return NetTestConfig{}, errors.New("proxy endpoint must be of type Public")
 		}
-		//if !ep.RequiresProxy{
-		//	return NetTestConfig{}, errors.New("proxy endpoint requires proxy server")
-		//}
 		switch ep.TargetType {
 		case TargetTypeICMP, TargetTypeDNS, TargetTypeHTTP:
 		default:

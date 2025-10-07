@@ -24,10 +24,14 @@ func (c *Checker)CheckPingWithContext(ctx context.Context, ep domain.Endpoint) d
 	latencyMs := time.Since(start).Seconds() * 1000
 
 	if err != nil  || !ok {
+		detailedErr := domain.Errorf(
+		domain.ErrorCodeICMPFailed,
+		"Ping failed %q: %w", ep.Target, err,
+		)
 		return domain.NewFailedProbe(
 			ep,
 			mapPingError(err, ctx.Err(), output),
-			err,
+			detailedErr,
 		)
 	}
 
@@ -64,7 +68,7 @@ func pingHostCmd(ctx context.Context, host string, attempts int) (bool, string, 
 		return false, output, ctx.Err()
 	}
 
-	// If the ping command failed to start (e.g. "ping: command not found")
+	//  "ping: command not found"...
 	if err != nil {
 		return false, output, err
 	}

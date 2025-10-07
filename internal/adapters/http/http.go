@@ -3,11 +3,8 @@ package http
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"net/url"
-	"strings"
-	"syscall"
 	"time"
 	"github.com/azargarov/rsvpck/internal/domain"
 )
@@ -56,14 +53,19 @@ func (c Checker) doRequest(ctx context.Context, ep domain.Endpoint, proxyURL *ur
 	
 	req, err := http.NewRequestWithContext(ctx, "GET", ep.Target, nil)
 	if err != nil {
+		info := classifyHTTPError(err, ctx.Err())
+		detailedErr := domain.Errorf(
+		info.ErrorCode,
+		"HTTP test failed for %q: %w", ep.Target, err,
+		)
 		return domain.NewFailedProbe(
 			ep,
 			domain.StatusInvalid,
-			err,
+			detailedErr,
 		)
 	}
 	
-	// Add a minimal user-agent to avoid 403s
+	// a user-agent to avoid 403s
 	req.Header.Set("User-Agent", "rsvpck/0.2 (network tester)")
 	
 	start := time.Now()
@@ -71,11 +73,15 @@ func (c Checker) doRequest(ctx context.Context, ep domain.Endpoint, proxyURL *ur
 	latencyMs := time.Since(start).Seconds() * 1000
 
 	if err != nil {
-		status := mapHTTPError(err, ctx.Err())
+		info := classifyHTTPError(err, ctx.Err())
+		detailedErr := domain.Errorf(
+		info.ErrorCode,
+		"HTTP test failed for %q: %w", ep.Target, err,
+		)
 		return domain.NewFailedProbe(
 			ep,
-			status,
-			err,
+			info.Status,
+			detailedErr,
 		)
 	}
 	defer resp.Body.Close()
@@ -87,67 +93,24 @@ func (c Checker) doRequest(ctx context.Context, ep domain.Endpoint, proxyURL *ur
 			latencyMs,
 		)
 	}
-
-	// HTTP error (4xx, 5xx)
+	var errorCode domain.ErrorCode
+	switch {
+	case resp.StatusCode == 407:
+	    errorCode = domain.ErrorCodeProxyAuthRequired
+	case resp.StatusCode >= 500:
+	    errorCode = domain.ErrorCodeHTTPBadStatus 
+	case resp.StatusCode >= 400:
+	    errorCode = domain.ErrorCodeHTTPClientError 
+	default:
+	    errorCode = domain.ErrorCodeHTTPBadStatus
+	}
+	detailedErr := domain.Errorf(
+    errorCode,
+    "HTTP request to %q returned %s", ep.Target, resp.Status,
+)
 	return domain.NewFailedProbe(
 		ep,
 		domain.StatusHTTPError,
-		errors.New("HTTP "+resp.Status),
+		detailedErr,
 	)
-}
-
-func mapHTTPError(err, contextErr error) domain.Status {
-	if contextErr != nil {
-		if errors.Is(contextErr, context.DeadlineExceeded) ||
-			errors.Is(contextErr, context.Canceled) {
-			return domain.StatusTimeout
-		}
-	}
-
-	var netErr net.Error
-	if errors.As(err, &netErr) {
-		if netErr.Timeout() {
-			return domain.StatusTimeout
-		}
-	}
-
-	if opErr, ok := err.(*net.OpError); ok {
-		if syscallErr, ok := opErr.Err.(*syscall.Errno); ok {
-			switch *syscallErr {
-			case syscall.ECONNREFUSED:
-				return domain.StatusConnectionRefused
-			case syscall.ENETUNREACH, syscall.EHOSTUNREACH:
-				return domain.StatusTimeout
-			}
-		}
-	}
-
-	if strings.Contains(err.Error(), "tls:") || strings.Contains(err.Error(), "handshake") {
-		if strings.Contains(err.Error(), "timeout") {
-			return domain.StatusTimeout
-		}
-		return domain.StatusConnectionRefused
-	}
-
-	if strings.Contains(err.Error(), "proxy") &&
-		(strings.Contains(err.Error(), "auth") || strings.Contains(err.Error(), "authentication")) {
-		return domain.StatusProxyAuth
-	}
-
-	errStr := strings.ToLower(err.Error())
-	if strings.Contains(errStr, "connection refused") {
-		return domain.StatusConnectionRefused
-	}
-	if strings.Contains(errStr, "timeout") ||
-		strings.Contains(errStr, "i/o timeout") ||
-		strings.Contains(errStr, "context deadline exceeded") {
-		return domain.StatusTimeout
-	}
-	if strings.Contains(errStr, "no such host") ||
-		strings.Contains(errStr, "dns") {
-		return domain.StatusDNSFailure
-	}
-
-	// Unknown error
-	return domain.StatusInvalid
 }

@@ -14,11 +14,7 @@ const localTimeOut = 3 * time.Second
 
 type Checker struct{}
 
-// CheckWithContext выполняет TCP-connect к target (в формате "host:port")
-// и возвращает domain.Probe.
-//
-// target должен быть в формате "host:port" (например, "8.8.8.8:443", "google.com:443").
-// Контекст ctx управляет временем выполнения и возможностью отмены.
+// CheckWithContext executes TCP-connect to the target  "host:port"
 func (c Checker) CheckWithContext(ctx context.Context, ep domain.Endpoint) domain.Probe {
 	if _, _, err := net.SplitHostPort(ep.Target); err != nil {
 		return domain.NewFailedProbe(

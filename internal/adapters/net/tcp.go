@@ -13,7 +13,7 @@ type TCPDialer struct{}
 var _ domain.TCPChecker = (*TCPDialer)(nil)
 
 func (d *TCPDialer) CheckWithContext(ctx context.Context, ep domain.Endpoint) domain.Probe {
-    addr := ep.Target //net.JoinHostPort(host, fmt.Sprint(port))
+    addr := ep.Target 
     start := time.Now()
     conn, err := net.DialTimeout("tcp", addr, 3*time.Second) 
     latencyMs := time.Since(start).Seconds() * 1000
@@ -22,7 +22,7 @@ func (d *TCPDialer) CheckWithContext(ctx context.Context, ep domain.Endpoint) do
     if err != nil {
         return domain.NewFailedProbe(
 			ep,
-			domain.StatusConnectionRefused,//mapPingError(err, ctx.Err(), output), //TODO: implement error mapping function
+			domain.StatusConnectionRefused,
 			err,
 		)
     }

@@ -18,13 +18,17 @@ var _ domain.DNSChecker = (*Checker)(nil)
 func (r Checker) CheckWithContext(ctx context.Context, ep domain.Endpoint) domain.Probe {
 	start := time.Now()
 	_, err := net.DefaultResolver.LookupHost(ctx, ep.Target)
-	latencyMs := time.Since(start).Seconds() * 1000
+	latencyMs := time.Since(start).Seconds() * 10
 
 	if err != nil {
+		detailedErr := domain.Errorf(
+		domain.ErrorCodeDNSUnresolvable,
+		"DNS resolution failed for %q: %w", ep.Target, err,
+		)
 		return domain.NewFailedProbe(
 			ep,
 			mapDNSError(err, ctx.Err()),
-			err,
+			detailedErr,
 		)
 	}
 	return domain.NewSuccessfulProbe(ep, latencyMs)
@@ -59,24 +63,19 @@ func mapDNSError(err, contextErr error) domain.Status {
 		}
 	}
 
-	// 2. Handle *net.DNSError (most common DNS error type)
 	var dnsErr *net.DNSError
 	if errors.As(err, &dnsErr) {
-		// If the DNS server didn't respond (timeout, network unreachable)
 		if dnsErr.Timeout() {
 			return domain.StatusTimeout
 		}
-		// If the host does not exist (NXDOMAIN)
 		if dnsErr.IsNotFound {
-			return domain.StatusDNSFailure // or a more specific StatusHostNotFound if you have it
+			return domain.StatusDNSFailure 
 		}
-		// If no DNS server is configured or reachable
 		if dnsErr.Err == "no such host" || dnsErr.Err == "server misbehaving" {
 			return domain.StatusDNSFailure
 		}
 	}
 
-	// 3. Fallback: check error message (less reliable, but safe)
 	errStr := err.Error()
 	if containsAny(errStr,
 		"no such host",
@@ -97,7 +96,6 @@ func mapDNSError(err, contextErr error) domain.Status {
 		return domain.StatusTimeout
 	}
 
-	// 4. Unknown error → treat as invalid or generic failure
 	return domain.StatusInvalid
 }
 
