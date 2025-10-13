@@ -3,11 +3,11 @@ package tcp
 import (
 	"context"
 	"errors"
+	"github.com/azargarov/rsvpck/internal/domain"
 	"net"
+	"strings"
 	"syscall"
 	"time"
-	"strings"
-	"github.com/azargarov/rsvpck/internal/domain"
 )
 
 const localTimeOut = 3 * time.Second
@@ -27,8 +27,8 @@ func (c Checker) CheckWithContext(ctx context.Context, ep domain.Endpoint) domai
 	start := time.Now()
 
 	dialer := &net.Dialer{
-		Timeout:   localTimeOut, 
-		KeepAlive: 0,              
+		Timeout:   localTimeOut,
+		KeepAlive: 0,
 	}
 
 	conn, err := dialer.DialContext(ctx, "tcp", ep.Target)
@@ -71,7 +71,7 @@ func mapErrorToStatus(err, contextErr error) domain.Status {
 			case syscall.ECONNREFUSED:
 				return domain.StatusConnectionRefused
 			case syscall.ENETUNREACH, syscall.EHOSTUNREACH:
-				return domain.StatusTimeout 
+				return domain.StatusTimeout
 			}
 		}
 	}

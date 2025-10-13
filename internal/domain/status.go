@@ -1,4 +1,4 @@
-package domain 
+package domain
 
 type Status int
 
@@ -19,18 +19,18 @@ const (
 func (s Status) IsValid() bool {
 	switch s {
 	case StatusUnknown, StatusSkipped, StatusFail, StatusPass, StatusWarning, StatusTimeout,
-	    StatusConnectionRefused, StatusInvalid, StatusDNSFailure, StatusHTTPError, StatusProxyAuth:
+		StatusConnectionRefused, StatusInvalid, StatusDNSFailure, StatusHTTPError, StatusProxyAuth:
 		return true
 	}
 	return false
 }
 
-func (s Status) String()string {
-	if ! s.IsValid(){
-			return "Not valid"
+func (s Status) String() string {
+	if !s.IsValid() {
+		return "Not valid"
 	}
-	switch s{
-	case StatusUnknown :
+	switch s {
+	case StatusUnknown:
 		return "Unknown"
 	case StatusSkipped:
 		return "Skipped"

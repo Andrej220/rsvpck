@@ -7,7 +7,7 @@ type ConnectivityResult struct {
 	IsConnected bool
 	Probes      []Probe
 	Timestamp   time.Time
-	Summary		string
+	Summary     string
 }
 
 func NewConnectivityResult(mode ConnectivityMode, probes []Probe) ConnectivityResult {
@@ -18,7 +18,7 @@ func NewConnectivityResult(mode ConnectivityMode, probes []Probe) ConnectivityRe
 		IsConnected: isConnected,
 		Probes:      probes,
 		Timestamp:   time.Now(),
-		Summary:	 summary,
+		Summary:     summary,
 	}
 }
 

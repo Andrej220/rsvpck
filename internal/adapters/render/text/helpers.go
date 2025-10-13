@@ -1,6 +1,6 @@
 package text
 
-import(
+import (
 	"fmt"
 	"github.com/azargarov/rsvpck/internal/domain"
 	"github.com/fatih/color"
@@ -17,9 +17,9 @@ func printSummary(w io.Writer, result domain.ConnectivityResult) {
 	}
 
 	mode := modeString(result.Mode)
-	fmt.Fprintln(w,"")
-	fmt.Fprintf(w,"%s • Mode: %s\n", status, mode)
-	fmt.Fprintln(w,"")
+	fmt.Fprintln(w, "")
+	fmt.Fprintf(w, "%s • Mode: %s\n", status, mode)
+	fmt.Fprintln(w, "")
 }
 
 func modeString(mode domain.ConnectivityMode) string {

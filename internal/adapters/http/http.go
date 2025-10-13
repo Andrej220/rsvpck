@@ -3,10 +3,10 @@ package http
 import (
 	"context"
 	"errors"
+	"github.com/azargarov/rsvpck/internal/domain"
 	"net/http"
 	"net/url"
 	"time"
-	"github.com/azargarov/rsvpck/internal/domain"
 )
 
 type Checker struct{}
@@ -42,7 +42,7 @@ func (c Checker) doRequest(ctx context.Context, ep domain.Endpoint, proxyURL *ur
 		}
 		transport = t
 	}
-	
+
 	client := &http.Client{
 		Transport: transport,
 		Timeout:   10 * time.Second, // overall request timeout
@@ -50,13 +50,13 @@ func (c Checker) doRequest(ctx context.Context, ep domain.Endpoint, proxyURL *ur
 			return http.ErrUseLastResponse // don't follow redirects
 		},
 	}
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", ep.Target, nil)
 	if err != nil {
 		info := classifyHTTPError(err, ctx.Err())
 		detailedErr := domain.Errorf(
-		info.ErrorCode,
-		"HTTP test failed for %q: %w", ep.Target, err,
+			info.ErrorCode,
+			"HTTP test failed for %q: %w", ep.Target, err,
 		)
 		return domain.NewFailedProbe(
 			ep,
@@ -64,10 +64,10 @@ func (c Checker) doRequest(ctx context.Context, ep domain.Endpoint, proxyURL *ur
 			detailedErr,
 		)
 	}
-	
+
 	// a user-agent to avoid 403s
 	req.Header.Set("User-Agent", "rsvpck/0.2 (network tester)")
-	
+
 	start := time.Now()
 	resp, err := client.Do(req)
 	latencyMs := time.Since(start).Seconds() * 1000
@@ -75,8 +75,8 @@ func (c Checker) doRequest(ctx context.Context, ep domain.Endpoint, proxyURL *ur
 	if err != nil {
 		info := classifyHTTPError(err, ctx.Err())
 		detailedErr := domain.Errorf(
-		info.ErrorCode,
-		"HTTP test failed for %q: %w", ep.Target, err,
+			info.ErrorCode,
+			"HTTP test failed for %q: %w", ep.Target, err,
 		)
 		return domain.NewFailedProbe(
 			ep,
@@ -96,18 +96,18 @@ func (c Checker) doRequest(ctx context.Context, ep domain.Endpoint, proxyURL *ur
 	var errorCode domain.ErrorCode
 	switch {
 	case resp.StatusCode == 407:
-	    errorCode = domain.ErrorCodeProxyAuthRequired
+		errorCode = domain.ErrorCodeProxyAuthRequired
 	case resp.StatusCode >= 500:
-	    errorCode = domain.ErrorCodeHTTPBadStatus 
+		errorCode = domain.ErrorCodeHTTPBadStatus
 	case resp.StatusCode >= 400:
-	    errorCode = domain.ErrorCodeHTTPClientError 
+		errorCode = domain.ErrorCodeHTTPClientError
 	default:
-	    errorCode = domain.ErrorCodeHTTPBadStatus
+		errorCode = domain.ErrorCodeHTTPBadStatus
 	}
 	detailedErr := domain.Errorf(
-    errorCode,
-    "HTTP request to %q returned %s", ep.Target, resp.Status,
-)
+		errorCode,
+		"HTTP request to %q returned %s", ep.Target, resp.Status,
+	)
 	return domain.NewFailedProbe(
 		ep,
 		domain.StatusHTTPError,

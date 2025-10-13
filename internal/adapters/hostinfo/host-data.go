@@ -2,18 +2,18 @@ package hostinfo
 
 import (
 	"context"
+	"github.com/azargarov/rsvpck/internal/domain"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 	"time"
-	"github.com/azargarov/rsvpck/internal/domain"
 )
+
 var windowsRoutingTableCommand = []string{"cmd", "/C", "route print -4 | findstr 0.0.0.0"}
-var linuxRoutingTableCommand = []string{"ip", "r", "show",  "default"}
+var linuxRoutingTableCommand = []string{"ip", "r", "show", "default"}
 
-
-func GetCRMInfo(ctx context.Context) domain.HostInfo{
+func GetCRMInfo(ctx context.Context) domain.HostInfo {
 
 	info := domain.NewHostInfo()
 	info.Hostname = getHostname()
@@ -24,16 +24,16 @@ func GetCRMInfo(ctx context.Context) domain.HostInfo{
 	return info
 }
 
-func getSID(ctx context.Context,) string{
+func getSID(ctx context.Context) string {
 
-	cmd := exec.CommandContext(ctx,"/opt/InSite/InSiteAgent/bin/AgentStatus")
+	cmd := exec.CommandContext(ctx, "/opt/InSite/InSiteAgent/bin/AgentStatus")
 	b, err := cmd.CombinedOutput()
 	if err == nil {
 		return string(b)
 	}
 
-	hostname :=getHostname()
-	if hostname != ""{
+	hostname := getHostname()
+	if hostname != "" {
 		return hostname
 	}
 
@@ -53,7 +53,7 @@ func getSID(ctx context.Context,) string{
 	return "unknown"
 }
 
-func getHostname() string{
+func getHostname() string {
 	if b, err := os.Hostname(); err == nil {
 		s := strings.TrimSpace(string(b))
 		if s != "" {
@@ -68,12 +68,12 @@ func getRoutingTable() []byte {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	var cmd *exec.Cmd 
+	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
-		cmd = exec.CommandContext(ctx, windowsRoutingTableCommand[0],windowsRoutingTableCommand[1:]...)//"cmd", "/C", "route print -4 | findstr 0.0.0.0")
+		cmd = exec.CommandContext(ctx, windowsRoutingTableCommand[0], windowsRoutingTableCommand[1:]...) //"cmd", "/C", "route print -4 | findstr 0.0.0.0")
 	case "linux":
-		cmd = exec.CommandContext(ctx, linuxRoutingTableCommand[0], linuxRoutingTableCommand[1:]...)//"ip", "r", "show",  "default")
+		cmd = exec.CommandContext(ctx, linuxRoutingTableCommand[0], linuxRoutingTableCommand[1:]...) //"ip", "r", "show",  "default")
 	default:
 		return []byte{}
 	}
@@ -85,5 +85,3 @@ func getRoutingTable() []byte {
 	}
 	return b
 }
-
-

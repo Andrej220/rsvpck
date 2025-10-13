@@ -1,19 +1,18 @@
 package dns
 
-import (    
+import (
 	"context"
-    "net"
-    "net/netip"
-    "time"
-	"strings"
 	"errors"
 	"github.com/azargarov/rsvpck/internal/domain"
+	"net"
+	"net/netip"
+	"strings"
+	"time"
 )
 
 type Checker struct{}
 
 var _ domain.DNSChecker = (*Checker)(nil)
-
 
 func (r Checker) CheckWithContext(ctx context.Context, ep domain.Endpoint) domain.Probe {
 	start := time.Now()
@@ -22,8 +21,8 @@ func (r Checker) CheckWithContext(ctx context.Context, ep domain.Endpoint) domai
 
 	if err != nil {
 		detailedErr := domain.Errorf(
-		domain.ErrorCodeDNSUnresolvable,
-		"DNS resolution failed for %q: %w", ep.Target, err,
+			domain.ErrorCodeDNSUnresolvable,
+			"DNS resolution failed for %q: %w", ep.Target, err,
 		)
 		return domain.NewFailedProbe(
 			ep,
@@ -34,24 +33,23 @@ func (r Checker) CheckWithContext(ctx context.Context, ep domain.Endpoint) domai
 	return domain.NewSuccessfulProbe(ep, latencyMs)
 }
 
+func (r *Checker) LookupHost(ctx context.Context, host string, timeout time.Duration) (ips []netip.Addr, err error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
-func (r *Checker)LookupHost(ctx context.Context, host string, timeout time.Duration) (ips []netip.Addr, err error){
-    ctx, cancel := context.WithTimeout(ctx, timeout)
-    defer cancel()
+	strIPs, err := net.DefaultResolver.LookupHost(ctx, host)
+	if err != nil {
+		return nil, err
+	}
 
-    strIPs, err := net.DefaultResolver.LookupHost(ctx, host)
-    if err != nil {
-        return nil, err
-    }
+	addrs := make([]netip.Addr, 0, len(strIPs))
+	for _, ip := range strIPs {
+		if addr, perr := netip.ParseAddr(ip); perr == nil {
+			addrs = append(addrs, addr)
+		}
+	}
 
-    addrs := make([]netip.Addr, 0, len(strIPs))
-    for _, ip := range strIPs {
-        if addr, perr := netip.ParseAddr(ip); perr == nil {
-            addrs = append(addrs, addr)
-        }
-    }
-
-    return addrs, nil
+	return addrs, nil
 }
 
 func mapDNSError(err, contextErr error) domain.Status {
@@ -68,7 +66,7 @@ func mapDNSError(err, contextErr error) domain.Status {
 			return domain.StatusTimeout
 		}
 		if dnsErr.IsNotFound {
-			return domain.StatusDNSFailure 
+			return domain.StatusDNSFailure
 		}
 		if dnsErr.Err == "no such host" || dnsErr.Err == "server misbehaving" {
 			return domain.StatusDNSFailure

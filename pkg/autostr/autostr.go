@@ -21,52 +21,52 @@ type AutoStringer interface {
 }
 
 const (
-    DefaultIncludeTag          = "string"
-    DefaultIncludeValue        = "include"
-    DefaultFieldNameTag        = "display"
-    DefaultSeparator           = ", "
-    DefaultFieldValueSeparator = ": "
+	DefaultIncludeTag          = "string"
+	DefaultIncludeValue        = "include"
+	DefaultFieldNameTag        = "display"
+	DefaultSeparator           = ", "
+	DefaultFieldValueSeparator = ": "
 )
 
 type Config struct {
-	IncludeTag           string // struct tag to include fields (default: "string")
-	IncludeValue         string // tag value that includes field (default: "include")
-	FieldNameTag		 string // struct tag to rename field
+	IncludeTag          string  // struct tag to include fields (default: "string")
+	IncludeValue        string  // tag value that includes field (default: "include")
+	FieldNameTag        string  // struct tag to rename field
 	FieldValueSeparator *string // separator between Field and Value (default: ": ")
 	Separator           *string // field separator (default: ", ")
-	ShowZeroValue        bool   // whether to show zero values (default: false)
-	PrettyPrint			 bool   // print multiline values in a pretty way
+	ShowZeroValue       bool    // whether to show zero values (default: false)
+	PrettyPrint         bool    // print multiline values in a pretty way
 }
 
 func Ptr[T any](v T) *T { return &v }
 
 func DefaultConfig() Config {
 	return Config{
-        IncludeTag:          DefaultIncludeTag,
-        IncludeValue:        DefaultIncludeValue,
-        FieldNameTag:        DefaultFieldNameTag,
-        Separator:           Ptr(DefaultSeparator),
-        FieldValueSeparator: Ptr(DefaultFieldValueSeparator),
-        ShowZeroValue:       false,
+		IncludeTag:          DefaultIncludeTag,
+		IncludeValue:        DefaultIncludeValue,
+		FieldNameTag:        DefaultFieldNameTag,
+		Separator:           Ptr(DefaultSeparator),
+		FieldValueSeparator: Ptr(DefaultFieldValueSeparator),
+		ShowZeroValue:       false,
 	}
 }
 
 func ensureDefaults(cfg *Config) {
-    if cfg.IncludeTag == "" {
-        cfg.IncludeTag = DefaultIncludeTag
-    }
-    if cfg.IncludeValue == "" {
-        cfg.IncludeValue = DefaultIncludeValue
-    }
-    if cfg.FieldNameTag == "" {
-        cfg.FieldNameTag = DefaultFieldNameTag
-    }
-    if cfg.Separator == nil {
-        cfg.Separator = Ptr(DefaultSeparator)
-    }
-    if cfg.FieldValueSeparator == nil {
-        cfg.FieldValueSeparator = Ptr(DefaultFieldValueSeparator)
-    }
+	if cfg.IncludeTag == "" {
+		cfg.IncludeTag = DefaultIncludeTag
+	}
+	if cfg.IncludeValue == "" {
+		cfg.IncludeValue = DefaultIncludeValue
+	}
+	if cfg.FieldNameTag == "" {
+		cfg.FieldNameTag = DefaultFieldNameTag
+	}
+	if cfg.Separator == nil {
+		cfg.Separator = Ptr(DefaultSeparator)
+	}
+	if cfg.FieldValueSeparator == nil {
+		cfg.FieldValueSeparator = Ptr(DefaultFieldValueSeparator)
+	}
 }
 
 // String renders any value to string using struct tags and Config.
@@ -131,8 +131,8 @@ func stringifyValue(v reflect.Value, cfg Config, visited map[uintptr]bool) strin
 	kv := *cfg.FieldValueSeparator
 
 	var indent int
-	if cfg.PrettyPrint{
-		indent = measureKeyColumnWidth(v, cfg) 
+	if cfg.PrettyPrint {
+		indent = measureKeyColumnWidth(v, cfg)
 	}
 
 	for i := 0; i < v.NumField(); i++ {
@@ -156,16 +156,16 @@ func stringifyValue(v reflect.Value, cfg Config, visited map[uintptr]bool) strin
 			sb.WriteString(sep)
 		}
 		displayName := ft.Tag.Get(cfg.FieldNameTag)
-		if displayName ==""{
+		if displayName == "" {
 			displayName = ft.Name
 		}
 		sb.WriteString(displayName)
 		val := formatValueWithVisited(field, cfg, visited)
-		
-		if cfg.PrettyPrint{
-			pad := indent - len(displayName) 
-			val = formatValueAligned(val," ", kv , indent , pad )
-		} else{
+
+		if cfg.PrettyPrint {
+			pad := indent - len(displayName)
+			val = formatValueAligned(val, " ", kv, indent, pad)
+		} else {
 			sb.WriteString(kv)
 		}
 		sb.WriteString(val)
@@ -196,11 +196,12 @@ func formatValueAligned(val, indentChar, separator string, indent, pad int) stri
 	return strings.Join(out, "\n")
 }
 
-
-func measureKeyColumnWidth(v reflect.Value, cfg Config) int{
+func measureKeyColumnWidth(v reflect.Value, cfg Config) int {
 
 	for v.IsValid() && (v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface) {
-		if v.IsNil() { return 0 }
+		if v.IsNil() {
+			return 0
+		}
 		v = v.Elem()
 	}
 	if !v.IsValid() || v.Kind() != reflect.Struct {

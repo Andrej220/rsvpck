@@ -12,7 +12,7 @@ type EndpointTargetType int
 const (
 	TargetTypeHTTP EndpointTargetType = iota // http:// or https://
 	TargetTypeTCP                            // host:port for TCP-connect
-	TargetTypeICMP							 // to ping
+	TargetTypeICMP                           // to ping
 	TargetTypeDNS
 )
 
@@ -34,8 +34,8 @@ func (t EndpointTargetType) String() string {
 type EndpointType int
 
 const (
-	EndpointTypePublic EndpointType = iota 
-	EndpointTypeVPN                        
+	EndpointTypePublic EndpointType = iota
+	EndpointTypeVPN
 )
 
 func (t EndpointType) String() string {
@@ -50,17 +50,17 @@ func (t EndpointType) String() string {
 }
 
 type Endpoint struct {
-	Target        	string               // "http://1.1.1.1" or "10.10.0.1:443"
-	TargetType    	EndpointTargetType   
-	Type          	EndpointType         
-	RequiresProxy 	bool       
-	ProxyURL	  	string          
-	Description   	string
+	Target        string // "http://1.1.1.1" or "10.10.0.1:443"
+	TargetType    EndpointTargetType
+	Type          EndpointType
+	RequiresProxy bool
+	ProxyURL      string
+	Description   string
 }
 
-func (e Endpoint) String()string{
+func (e Endpoint) String() string {
 	str := fmt.Sprintf("Target: %s, TType: %s, Type: %s, Descr: %s",
-						e.Target,e.TargetType.String(), e.Type.String(), e.Description)
+		e.Target, e.TargetType.String(), e.Type.String(), e.Description)
 	return str
 }
 
@@ -89,7 +89,7 @@ func NewTCPEndpoint(hostPort string, typ EndpointType, description string) (Endp
 	}, nil
 }
 
-func NewICMPEndpoint(host string, typ EndpointType, description string)(Endpoint, error){
+func NewICMPEndpoint(host string, typ EndpointType, description string) (Endpoint, error) {
 	if strings.TrimSpace(host) == "" {
 		return Endpoint{}, errors.New("ICMP host cannot be empty")
 	}
@@ -136,11 +136,11 @@ func (e Endpoint) IsPublic() bool {
 	return e.Type == EndpointTypePublic
 }
 
-func (e Endpoint) IsICMP() bool{
+func (e Endpoint) IsICMP() bool {
 	return e.TargetType == TargetTypeICMP
 }
 
-func (e Endpoint) IsDNS() bool{
+func (e Endpoint) IsDNS() bool {
 	return e.TargetType == TargetTypeDNS
 }
 

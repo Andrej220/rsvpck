@@ -2,11 +2,12 @@ package text
 
 import (
 	"fmt"
+	"github.com/azargarov/rsvpck/internal/domain"
+	"github.com/fatih/color"
 	"io"
 	"sort"
-	"github.com/fatih/color"
-	"github.com/azargarov/rsvpck/internal/domain"
 )
+
 type TextRenderer struct{}
 
 func NewRenderer() *TextRenderer {
@@ -14,8 +15,8 @@ func NewRenderer() *TextRenderer {
 }
 
 func (r *TextRenderer) Render(w io.Writer, result domain.ConnectivityResult) error {
-	
-	printSummary(w,result)
+
+	printSummary(w, result)
 
 	vpnProbes, directProbes, proxyProbes := r.groupProbes(result.Probes)
 

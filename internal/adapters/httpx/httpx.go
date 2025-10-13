@@ -1,20 +1,19 @@
 package httpx
 
 import (
-	"github.com/azargarov/rsvpck/internal/domain"
-	"time"
-	"crypto/tls"
-	"net"
 	"context"
-	"strings"
+	"crypto/tls"
 	"errors"
+	"github.com/azargarov/rsvpck/internal/domain"
+	"net"
+	"strings"
+	"time"
 )
 
 // TLSChecker implements domain.TLSCertificateFetcher.
 //
 // Compile-time interface assertion:
 //var _ domain.TLSCertificateFetcher = (*TLSChecker)(nil)
-
 
 func GetCertificates(ctx context.Context, addr, serverName string) ([]domain.TLSCertificate, error) {
 
@@ -34,13 +33,13 @@ func GetCertificates(ctx context.Context, addr, serverName string) ([]domain.TLS
 	} else if timeout > 0 {
 		dialer.Timeout = timeout
 	}
-	
+
 	rawConn, err := dialer.DialContext(ctx, "tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rawConn.Close() }()
-	
+
 	cfg := &tls.Config{
 		ServerName: serverName, // SNI + hostname verification
 	}
@@ -50,13 +49,12 @@ func GetCertificates(ctx context.Context, addr, serverName string) ([]domain.TLS
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		return nil, err
 	}
-	
+
 	// After handshake succeeds, the underlying rawConn is now owned by tlsConn.
 	// Close tlsConn instead.
 	defer func() { _ = tlsConn.Close() }()
 	state := tlsConn.ConnectionState()
 	now := time.Now()
-
 
 	out := make([]domain.TLSCertificate, 0, len(state.PeerCertificates))
 	for _, cert := range state.PeerCertificates {

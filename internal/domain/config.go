@@ -3,24 +3,23 @@ package domain
 import "errors"
 
 type NetTestConfig struct {
-
-	VPNEndpoints 		[]Endpoint
-	DirectEndpoints 	[]Endpoint
-	ProxyEndpoints 		[]Endpoint
-	ProxyURL 			string
+	VPNEndpoints    []Endpoint
+	DirectEndpoints []Endpoint
+	ProxyEndpoints  []Endpoint
+	ProxyURL        string
 }
 
 func NewNetTestConfig(
-	vpnEndpoints 	[]Endpoint,
+	vpnEndpoints []Endpoint,
 	directEndpoints []Endpoint,
-	ProxyEndpoints 	[]Endpoint,
-	proxyURL 		string,
+	ProxyEndpoints []Endpoint,
+	proxyURL string,
 ) (NetTestConfig, error) {
 	for _, ep := range vpnEndpoints {
-		if ep.Type != EndpointTypeVPN  {
+		if ep.Type != EndpointTypeVPN {
 			return NetTestConfig{}, errors.New("all VPN endpoints must be of type VPN")
 		}
-		if ep.TargetType != TargetTypeTCP  && ep.TargetType != TargetTypeICMP{
+		if ep.TargetType != TargetTypeTCP && ep.TargetType != TargetTypeICMP {
 			return NetTestConfig{}, errors.New("VPN endpoints must be TCP or ICMP")
 		}
 	}
@@ -33,9 +32,9 @@ func NewNetTestConfig(
 		case TargetTypeTCP, TargetTypeICMP, TargetTypeDNS, TargetTypeHTTP:
 		default:
 			return NetTestConfig{}, errors.New("direct endpoints must be TCP, ICMP, DNS, or HTTP")
-		}	
+		}
 	}
-	for _, ep := range ProxyEndpoints{
+	for _, ep := range ProxyEndpoints {
 		if ep.Type != EndpointTypePublic {
 			return NetTestConfig{}, errors.New("proxy endpoint must be of type Public")
 		}
@@ -47,13 +46,12 @@ func NewNetTestConfig(
 	}
 
 	return NetTestConfig{
-		VPNEndpoints:       vpnEndpoints,
-		DirectEndpoints: 	directEndpoints,
-		ProxyEndpoints:  	ProxyEndpoints,
-		ProxyURL:           proxyURL,
+		VPNEndpoints:    vpnEndpoints,
+		DirectEndpoints: directEndpoints,
+		ProxyEndpoints:  ProxyEndpoints,
+		ProxyURL:        proxyURL,
 	}, nil
 }
-
 
 func (c NetTestConfig) HasVPNChecks() bool {
 	return len(c.VPNEndpoints) > 0
@@ -97,7 +95,7 @@ func MustNewDNSEndpoint(host string, typ EndpointType, desc string) Endpoint {
 	return ep
 }
 
-func MustNewHTTPEndpoint(url string, typ EndpointType, overProxy bool, proxyURL string ,desc string) Endpoint {
+func MustNewHTTPEndpoint(url string, typ EndpointType, overProxy bool, proxyURL string, desc string) Endpoint {
 	ep, err := NewHTTPEndpoint(url, typ, desc)
 	if err != nil {
 		panic("invalid HTTP endpoint: " + url + " - " + err.Error())

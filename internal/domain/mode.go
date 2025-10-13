@@ -3,10 +3,10 @@ package domain
 type ConnectivityMode int
 
 const (
-	ModeNone ConnectivityMode = iota 
-	ModeDirect                       
-	ModeViaProxy                     
-	ModeViaVPN                       
+	ModeNone ConnectivityMode = iota
+	ModeDirect
+	ModeViaProxy
+	ModeViaVPN
 )
 
 func (m ConnectivityMode) String() string {

@@ -11,6 +11,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 )
+
 const maxTableWidth = 400
 
 type TableRenderer struct{}
@@ -24,15 +25,15 @@ func (tr *TableRenderer) Render(w io.Writer, result domain.ConnectivityResult) e
 	vpn, direct, proxy := tr.groupProbes(result.Probes)
 
 	// Print overall status
-	printSummary(w,result)
+	printSummary(w, result)
 
 	// Print sections
 	if len(vpn) > 0 {
-		tr.renderProbeTable(w, vpn,"VPN Connectivity")
+		tr.renderProbeTable(w, vpn, "VPN Connectivity")
 	}
 
 	if len(direct) > 0 {
-		tr.renderProbeTable(w, direct,"Direct Internet")
+		tr.renderProbeTable(w, direct, "Direct Internet")
 	}
 
 	if len(proxy) > 0 {
@@ -57,11 +58,11 @@ func (tr *TableRenderer) groupProbes(probes []domain.Probe) (vpn, direct, proxy 
 
 func (tr *TableRenderer) renderProbeTable(w io.Writer, probes []domain.Probe, name string) {
 	table := tablewriter.NewTable(w,
-        tablewriter.WithAlignment([]tw.Align{tw.AlignLeft, tw.AlignLeft, tw.AlignRight, tw.AlignLeft}),  
-        tablewriter.WithRowAutoWrap(tw.WrapNormal),    
-        tablewriter.WithHeaderAutoWrap(tw.WrapTruncate), 
-        tablewriter.WithMaxWidth(maxTableWidth),                
-    )
+		tablewriter.WithAlignment([]tw.Align{tw.AlignLeft, tw.AlignLeft, tw.AlignRight, tw.AlignLeft}),
+		tablewriter.WithRowAutoWrap(tw.WrapNormal),
+		tablewriter.WithHeaderAutoWrap(tw.WrapTruncate),
+		tablewriter.WithMaxWidth(maxTableWidth),
+	)
 
 	table.Header([]string{name, "Status", "Latency", "Details"})
 

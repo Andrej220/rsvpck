@@ -49,14 +49,14 @@ func (ec ErrorCode) Is(target error) bool {
 
 func Errorf(code ErrorCode, format string, args ...any) error {
 	return &wrappedError{
-		code:    code,
+		code:  code,
 		inner: fmt.Errorf(format, args...),
 	}
 }
 
 type wrappedError struct {
-	code    ErrorCode
-	inner   error
+	code  ErrorCode
+	inner error
 }
 
 func (e *wrappedError) Error() string {

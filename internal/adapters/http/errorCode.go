@@ -1,12 +1,12 @@
 package http
 
-import(
-	"github.com/azargarov/rsvpck/internal/domain"
+import (
 	"context"
 	"errors"
-	"syscall"
-	"strings"
+	"github.com/azargarov/rsvpck/internal/domain"
 	"net"
+	"strings"
+	"syscall"
 )
 
 type httpErrorInfo struct {
