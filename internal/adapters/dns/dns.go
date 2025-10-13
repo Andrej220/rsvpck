@@ -18,7 +18,7 @@ var _ domain.DNSChecker = (*Checker)(nil)
 func (r Checker) CheckWithContext(ctx context.Context, ep domain.Endpoint) domain.Probe {
 	start := time.Now()
 	_, err := net.DefaultResolver.LookupHost(ctx, ep.Target)
-	latencyMs := time.Since(start).Seconds() * 10
+	latencyMs := time.Since(start).Seconds() * 1000
 
 	if err != nil {
 		detailedErr := domain.Errorf(
@@ -55,7 +55,6 @@ func (r *Checker)LookupHost(ctx context.Context, host string, timeout time.Durat
 }
 
 func mapDNSError(err, contextErr error) domain.Status {
-	// 1. First, check if the operation was cancelled or timed out via context
 	if contextErr != nil {
 		if errors.Is(contextErr, context.DeadlineExceeded) ||
 			errors.Is(contextErr, context.Canceled) {

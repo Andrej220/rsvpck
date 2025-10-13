@@ -3,7 +3,7 @@ package domain
 type ExecutionPolicy int
 
 const (
-	PlicyOptimized 		ExecutionPolicy = iota
+	PolicyOptimized 		ExecutionPolicy = iota
 	PolicyExhaustive 
 )
 

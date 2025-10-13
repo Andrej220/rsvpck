@@ -31,13 +31,13 @@ func NewExecutor(
 
 func (e *Executor) Run(ctx context.Context, config domain.NetTestConfig) domain.ConnectivityResult {
     var probes []domain.Probe
-	if e.policy == domain.PlicyOptimized{
+	if e.policy == domain.PolicyOptimized{
 		probes = append(probes, e.runOptimizedChecks(ctx, config.DirectEndpoints)...)
 	} else{
 		probes = append(probes, e.runEndpointCheck(ctx, config.DirectEndpoints)...)
 	}
 	probes = append(probes, e.runEndpointCheck(ctx,config.ProxyEndpoints)...)
-	if e.policy == domain.PlicyOptimized{
+	if e.policy == domain.PolicyOptimized{
 		probes = append(probes, e.runOptimizedChecks(ctx, config.VPNEndpoints)...)
 	} else {
 		probes = append(probes, e.runEndpointCheck(ctx, config.VPNEndpoints)...)

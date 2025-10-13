@@ -1,20 +1,40 @@
-package main
+package hostinfo
 
-import(
-	"os/exec"
+import (
+	"context"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
-	//"context"
-	//"time"
-	//"runtime"
+	"time"
+	"github.com/azargarov/rsvpck/internal/domain"
 )
+var windowsRoutingTableCommand = []string{"cmd", "/C", "route print -4 | findstr 0.0.0.0"}
+var linuxRoutingTableCommand = []string{"ip", "r", "show",  "default"}
 
-func getMachineUUID() string{
 
-	cmd := exec.Command("/opt/InSite/InSiteAgent/bin/AgentStatus")
+func GetCRMInfo(ctx context.Context) domain.HostInfo{
+
+	info := domain.NewHostInfo()
+	info.Hostname = getHostname()
+	info.OS = runtime.GOOS
+	info.SID = getSID(ctx)
+	info.RT = string(getRoutingTable())
+
+	return info
+}
+
+func getSID(ctx context.Context,) string{
+
+	cmd := exec.CommandContext(ctx,"/opt/InSite/InSiteAgent/bin/AgentStatus")
 	b, err := cmd.CombinedOutput()
 	if err == nil {
 		return string(b)
+	}
+
+	hostname :=getHostname()
+	if hostname != ""{
+		return hostname
 	}
 
 	if b, err := os.ReadFile("/etc/machine-id"); err == nil {
@@ -30,11 +50,10 @@ func getMachineUUID() string{
 			return s
 		}
 	}
-
-	return getHostName()
+	return "unknown"
 }
 
-func getHostName() string{
+func getHostname() string{
 	if b, err := os.Hostname(); err == nil {
 		s := strings.TrimSpace(string(b))
 		if s != "" {
@@ -44,35 +63,27 @@ func getHostName() string{
 	return "unknown"
 }
 
-//func getRoutePath() NetTestResult{
-//	result := NetTestResult{
-//		TestName: "Routing table",
-//		TestShortName: "Route",
-//	}
-//	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-//	defer cancel()
-//
-//	var cmd *exec.Cmd 
-//	switch runtime.GOOS {
-//	case "windows":
-//		cmd = exec.CommandContext(ctx, "cmd", "/C", "route print -4 | findstr 0.0.0.0")
-//	case "linux":
-//		cmd = exec.CommandContext(ctx, "ip", "r", "show",  "default")
-//	default:
-//		
-//	}
-//
-//	b, err := cmd.CombinedOutput()
-//
-//	if err != nil {
-//		result.Status = StatusFail
-//		result.Details = "Failed to get routing table"
-//		result.Error = err
-//		return result
-//	}
-//
-//	result.Status = StatusUnknown
-//	result.Details = indentMultiline(string(b))
-//	return result
-//}
+func getRoutingTable() []byte {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	var cmd *exec.Cmd 
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.CommandContext(ctx, windowsRoutingTableCommand[0],windowsRoutingTableCommand[1:]...)//"cmd", "/C", "route print -4 | findstr 0.0.0.0")
+	case "linux":
+		cmd = exec.CommandContext(ctx, linuxRoutingTableCommand[0], linuxRoutingTableCommand[1:]...)//"ip", "r", "show",  "default")
+	default:
+		return []byte{}
+	}
+
+	b, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return []byte{}
+	}
+	return b
+}
+
 

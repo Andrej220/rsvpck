@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
-
+	"github.com/fatih/color"
 	"github.com/azargarov/rsvpck/internal/domain"
 )
 type TextRenderer struct{}
@@ -14,9 +14,8 @@ func NewRenderer() *TextRenderer {
 }
 
 func (r *TextRenderer) Render(w io.Writer, result domain.ConnectivityResult) error {
-	fmt.Fprint(w,"\n")
-	fmt.Fprintf(w, "Internet Connectivity: %s\n", r.modeString(result.Mode))
-	fmt.Fprintf(w, "\t%s\n\n", result.Summary)
+	
+	printSummary(w,result)
 
 	vpnProbes, directProbes, proxyProbes := r.groupProbes(result.Probes)
 
@@ -41,19 +40,6 @@ func (r *TextRenderer) Render(w io.Writer, result domain.ConnectivityResult) err
 	return nil
 }
 
-func (r *TextRenderer) modeString(mode domain.ConnectivityMode) string {
-	switch mode {
-	case domain.ModeDirect:
-		return "Direct"
-	case domain.ModeViaProxy:
-		return "Via Proxy"
-	case domain.ModeViaVPN:
-		return "Via VPN"
-	default:
-		return "None"
-	}
-}
-
 func (r *TextRenderer) groupProbes(probes []domain.Probe) (vpn, direct, proxy []domain.Probe) {
 	for _, p := range probes {
 		if p.Endpoint.Type == domain.EndpointTypeVPN {
@@ -75,10 +61,13 @@ func (r *TextRenderer) renderProbeList(w io.Writer, probes []domain.Probe) {
 		return probes[i].Endpoint.Target < probes[j].Endpoint.Target
 	})
 
+	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
+
 	for _, p := range probes {
-		statusIcon := "✓ "
+		statusIcon := green("✓ ")
 		if !p.IsSuccessful() {
-			statusIcon = "✗ "
+			statusIcon = red("✗ ")
 		}
 
 		desc := p.Endpoint.Description

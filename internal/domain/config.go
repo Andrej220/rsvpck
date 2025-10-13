@@ -99,12 +99,12 @@ func MustNewDNSEndpoint(host string, typ EndpointType, desc string) Endpoint {
 
 func MustNewHTTPEndpoint(url string, typ EndpointType, overProxy bool, proxyURL string ,desc string) Endpoint {
 	ep, err := NewHTTPEndpoint(url, typ, desc)
-	ep.RequiresProxy = overProxy
-	ep.ProxyURL = proxyURL
-	ep.Description = desc
 	if err != nil {
 		panic("invalid HTTP endpoint: " + url + " - " + err.Error())
 	}
+	ep.RequiresProxy = overProxy
+	ep.ProxyURL = proxyURL
+	ep.Description = desc
 	return ep
 }
 

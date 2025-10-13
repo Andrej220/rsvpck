@@ -8,6 +8,10 @@ import (
 	"github.com/azargarov/rsvpck/internal/adapters/http"
 	"github.com/azargarov/rsvpck/internal/adapters/icmp"
 	"github.com/azargarov/rsvpck/internal/adapters/render/text"
+	"github.com/azargarov/rsvpck/internal/adapters/hostinfo"
+	"github.com/azargarov/rsvpck/internal/adapters/httpx"
+	"github.com/azargarov/go-utils/autostr"
+
 	"fmt"
 	"time"
 	"context"
@@ -15,6 +19,25 @@ import (
 )
 
 func main(){
+
+	printHeader()
+	rsvpConf := parseFlagsToConfig()
+
+	var err error
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	h := hostinfo.GetCRMInfo(ctx)
+	autostrCfg := autostr.Config{Separator: autostr.Ptr("\n"), FieldValueSeparator: autostr.Ptr(" : "), PrettyPrint: true}
+
+	text.PrintBlock(os.Stdout,"SYSTEM INFORMATION", autostr.String(h, autostrCfg))
+	h.TLSCert, err = httpx.GetCertificates(ctx,"insite-eu.gehealthcare.com:443","insite-eu.gehealthcare.com")
+	
+	if err == nil{
+		text.PrintList(os.Stdout, "TLS certificates, eu-insite.gehealthcare.com\n",h.TLSCert)
+	}else{
+		fmt.Println("Failed to fetch certificates")
+	}
 
 	tcpChecker := &tcp.Checker{}
 	dnsChecker := &dns.Checker{}
@@ -24,23 +47,29 @@ func main(){
 
 	config,err := buildNetTestConfig(proxyURL) 
 	if err != nil {
-		fmt.Printf("❌ Invalid config: %v", err)
+		fmt.Printf("Invalid config: %v", err)
 		return
 	}
-	executor := app.NewExecutor(tcpChecker, dnsChecker, httpChecker, icmpChecker, domain.PlicyOptimized)
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-	defer cancel()
-
+	executor := app.NewExecutor(tcpChecker, dnsChecker, httpChecker, icmpChecker, domain.PolicyOptimized)
 	result := executor.Run(ctx, config)
-
+	
 	var renderer domain.Renderer
-	renderer = text.NewRenderer()
-	renderer.Render(os.Stdout, result)
-	fmt.Println("=======================================================")
-	renderer = text.NewTableRenderer()
-	if err := renderer.Render(os.Stdout,result); err != nil {
-    	fmt.Printf("Failed to render: %v", err)
+	if rsvpConf.textRender{
+		renderer = text.NewRenderer()
+		if err := renderer.Render(os.Stdout, result); err != nil{
+			fmt.Printf("Failed to render: %v", err)
+		}
+	} else{
+		renderer = text.NewTableRenderer()
+		if err := renderer.Render(os.Stdout,result); err != nil {
+			fmt.Printf("Failed to render: %v", err)
+		}
 	}
+}
+
+func printHeader(){
+	fmt.Println("\nRSVP CHECK - Connectivity Diagnostics")
+	fmt.Println("══════════════════════════════════════")
 }
 
 

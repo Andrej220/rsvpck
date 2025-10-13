@@ -3,12 +3,15 @@ package text
 
 import (
 	"fmt"
-	"github.com/olekukonko/tablewriter/tw"
+	//"github.com/olekukonko/tablewriter/tw"
+	"io"
+
+	"github.com/azargarov/rsvpck/internal/domain"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
-	"github.com/azargarov/rsvpck/internal/domain"
-	"io"
+	"github.com/olekukonko/tablewriter/tw"
 )
+const maxTableWidth = 400
 
 type TableRenderer struct{}
 
@@ -21,52 +24,22 @@ func (tr *TableRenderer) Render(w io.Writer, result domain.ConnectivityResult) e
 	vpn, direct, proxy := tr.groupProbes(result.Probes)
 
 	// Print overall status
-	tr.printSummary(w,result)
+	printSummary(w,result)
 
 	// Print sections
 	if len(vpn) > 0 {
-		fmt.Println("\nVPN Connectivity")
-		tr.renderProbeTable(w, vpn)
+		tr.renderProbeTable(w, vpn,"VPN Connectivity")
 	}
 
 	if len(direct) > 0 {
-		fmt.Println("\nDirect Internet")
-		tr.renderProbeTable(w, direct)
+		tr.renderProbeTable(w, direct,"Direct Internet")
 	}
 
 	if len(proxy) > 0 {
-		fmt.Println("\nInternet via Proxy")
-		tr.renderProbeTable(w, proxy)
+		tr.renderProbeTable(w, proxy, "Internet via Proxy")
 	}
 
 	return nil
-}
-
-func (tr *TableRenderer) printSummary(w io.Writer, result domain.ConnectivityResult) {
-	green := color.New(color.FgGreen).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
-
-	status := red("None")
-	if result.IsConnected {
-		status = green("Connected")
-	}
-
-	mode := tr.modeString(result.Mode)
-	fmt.Fprintf(w,"%s • Mode: %s\n", status, mode)
-	fmt.Fprintln(w,result.Summary)
-}
-
-func (tr *TableRenderer) modeString(mode domain.ConnectivityMode) string {
-	switch mode {
-	case domain.ModeDirect:
-		return "Direct"
-	case domain.ModeViaProxy:
-		return "Via Proxy"
-	case domain.ModeViaVPN:
-		return "Via VPN"
-	default:
-		return "None"
-	}
 }
 
 func (tr *TableRenderer) groupProbes(probes []domain.Probe) (vpn, direct, proxy []domain.Probe) {
@@ -82,15 +55,15 @@ func (tr *TableRenderer) groupProbes(probes []domain.Probe) (vpn, direct, proxy 
 	return
 }
 
-func (tr *TableRenderer) renderProbeTable(w io.Writer, probes []domain.Probe) {
+func (tr *TableRenderer) renderProbeTable(w io.Writer, probes []domain.Probe, name string) {
 	table := tablewriter.NewTable(w,
         tablewriter.WithAlignment([]tw.Align{tw.AlignLeft, tw.AlignLeft, tw.AlignRight, tw.AlignLeft}),  
         tablewriter.WithRowAutoWrap(tw.WrapNormal),    
         tablewriter.WithHeaderAutoWrap(tw.WrapTruncate), 
-        tablewriter.WithMaxWidth(400),                
+        tablewriter.WithMaxWidth(maxTableWidth),                
     )
 
-	table.Header([]string{"Test", "Status", "Latency", "Details"})
+	table.Header([]string{name, "Status", "Latency", "Details"})
 
 	green := color.New(color.FgGreen).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()

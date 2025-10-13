@@ -1,8 +1,11 @@
 module github.com/azargarov/rsvpck
 
-go 1.22
+go 1.23
+
+toolchain go1.24.6
 
 require (
+	github.com/azargarov/go-utils/autostr v0.1.5
 	github.com/fatih/color v1.18.0
 	github.com/olekukonko/tablewriter v1.1.0
 )
