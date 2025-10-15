@@ -17,6 +17,7 @@ const (
 	ErrorCodeInvalidConfig
 	ErrorCodeICMPFailed
 	ErrorCodeHTTPClientError
+	ErrorCodeExecFailed
 )
 
 func (ec ErrorCode) Error() string {
@@ -35,6 +36,8 @@ func (ec ErrorCode) Error() string {
 		return "invalid configuration"
 	case ErrorCodeICMPFailed:
 		return "ICMP ping failed"
+	case ErrorCodeExecFailed:
+		return "external command execution failed"
 	default:
 		return fmt.Sprintf("unknown error code: %d", ec)
 	}
