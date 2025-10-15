@@ -7,6 +7,7 @@ import (
 type rsvpckConf struct {
 	textRender  bool
 	tableRender bool
+	forseASCII bool
 }
 
 func NewRsvpckConf() rsvpckConf {
@@ -33,9 +34,11 @@ func (r *rsvpckConf) SetRender(textRender bool) {
 
 func parseFlagsToConfig() *rsvpckConf {
 	txtRender := flag.Bool("text", false, "render connectivity info as text. Default table")
+	flagForceASCII := flag.Bool("ascii", false, "Force ASCII-only output (no Unicode symbols)")
 	flag.Parse()
 
 	r := NewRsvpckConf()
 	r.SetRender(*txtRender)
+	r.forseASCII = *flagForceASCII
 	return &r
 }
