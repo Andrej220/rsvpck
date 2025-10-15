@@ -46,9 +46,9 @@ func pingHostCmd(ctx context.Context, host string, attempts int) (bool, string, 
 	var args []string
 	switch runtime.GOOS {
 	case "windows":
-		args = []string{"-n", fmt.Sprint(attempts), "-4", host}
+		args = []string{"-n", fmt.Sprint(attempts), host}
 	default: // linux, darwin, *bsd
-		args = []string{"-c", fmt.Sprint(attempts), "-4", host}
+		args = []string{"-c", fmt.Sprint(attempts), host}
 	}
 
 	cmd := exec.CommandContext(ctx, "ping", args...)
@@ -70,12 +70,15 @@ func pingHostCmd(ctx context.Context, host string, attempts int) (bool, string, 
 
 	//  "ping: command not found"...
 	if err != nil {
-		return false, output, err
+	    outputLower := strings.ToLower(output)
+    	if containsAny(outputLower, "invalid", "unrecognized", "illegal", "command not found") {
+    	    return false, output, domain.Errorf(domain.ErrorCodeExecFailed, "ping command failed: %w (output: %q)", err, strings.TrimSpace(output))
+    	}
+    	return false, output, domain.Errorf(domain.ErrorCodeICMPFailed, "ping failed: %w", err)	
 	}
 
 	success := isPingSuccessful(output, runtime.GOOS, attempts)
-
-	return success, out.String(), nil
+	return success, output, nil
 }
 
 func isPingSuccessful(output, os string, attempts int) bool {
@@ -104,6 +107,11 @@ func isPingSuccessful(output, os string, attempts int) bool {
 }
 
 func mapPingError(err error, contextErr error, output string) domain.Status {
+
+	if domain.IsErrorCode(err, domain.ErrorCodeExecFailed) {
+        return domain.StatusInvalidCommand 
+    }
+
 	// 1. Context cancellation/timeout
 	if contextErr != nil {
 		if errors.Is(contextErr, context.DeadlineExceeded) ||
