@@ -1,14 +1,12 @@
-// internal/adapters/render/text/table_renderer.go
 package text
 
 import (
 	"fmt"
-	//"github.com/olekukonko/tablewriter/tw"
 	"io"
 
 	"github.com/azargarov/rsvpck/internal/domain"
-	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
 	"github.com/olekukonko/tablewriter/tw"
 )
 
@@ -62,12 +60,10 @@ func (tr *TableRenderer) renderProbeTable(w io.Writer, probes []domain.Probe, na
 		tablewriter.WithRowAutoWrap(tw.WrapNormal),
 		tablewriter.WithHeaderAutoWrap(tw.WrapTruncate),
 		tablewriter.WithMaxWidth(maxTableWidth),
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{Symbols: getTableBorders()})),
 	)
 
 	table.Header([]string{name, "Status", "Latency", "Details"})
-
-	green := color.New(color.FgGreen).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
 
 	for _, p := range probes {
 		desc := p.Endpoint.Description
@@ -75,9 +71,9 @@ func (tr *TableRenderer) renderProbeTable(w io.Writer, probes []domain.Probe, na
 			desc = fmt.Sprintf("%s (%s)", p.Endpoint.Target, p.Endpoint.TargetType.String())
 		}
 
-		statusStr := red("✗ Fail")
+		statusStr := failSym + " Fail"
 		if p.IsSuccessful() {
-			statusStr = green("✓ Pass")
+			statusStr = okSym + " Pass"
 		}
 
 		latencyStr := "-"
@@ -87,7 +83,7 @@ func (tr *TableRenderer) renderProbeTable(w io.Writer, probes []domain.Probe, na
 
 		details := ""
 		if !p.IsSuccessful() && p.Error != "" {
-			details = tr.truncate(p.Error, 50)
+			details = truncateError(p.Error, maxCharPerError)
 		}
 
 		table.Append([]string{desc, statusStr, latencyStr, details})
@@ -96,9 +92,25 @@ func (tr *TableRenderer) renderProbeTable(w io.Writer, probes []domain.Probe, na
 	table.Render()
 }
 
-func (tr *TableRenderer) truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
+func getTableBorders() *tw.SymbolCustom {
+
+	nature := tw.NewSymbolCustom("Nature").
+		WithRow("─").
+		WithColumn("│").
+		WithTopLeft("┌").WithTopMid("┬").WithTopRight("┐").
+		WithMidLeft("├").WithCenter("┼").WithMidRight("┤").
+		WithBottomLeft("└").WithBottomMid("┴").WithBottomRight("┘")
+
+	ascii := tw.NewSymbolCustom("ASCII").
+		WithRow("-").
+		WithColumn("|").
+		WithTopLeft("+").WithTopMid("+").WithTopRight("+").
+		WithMidLeft("+").WithCenter("+").WithMidRight("+").
+		WithBottomLeft("+").WithBottomMid("+").WithBottomRight("+")
+
+	sym := ascii
+	if unicodeSupported {
+		sym = nature
 	}
-	return s[:maxLen-3] + "..."
+	return sym
 }

@@ -2,10 +2,9 @@ package text
 
 import (
 	"fmt"
-	"github.com/azargarov/rsvpck/internal/domain"
-	"github.com/fatih/color"
 	"io"
 	"sort"
+	"github.com/azargarov/rsvpck/internal/domain"
 )
 
 type TextRenderer struct{}
@@ -62,13 +61,10 @@ func (r *TextRenderer) renderProbeList(w io.Writer, probes []domain.Probe) {
 		return probes[i].Endpoint.Target < probes[j].Endpoint.Target
 	})
 
-	green := color.New(color.FgGreen).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
-
 	for _, p := range probes {
-		statusIcon := green("✓ ")
-		if !p.IsSuccessful() {
-			statusIcon = red("✗ ")
+		statusIcon := failSym
+		if p.IsSuccessful() {
+			statusIcon = okSym
 		}
 
 		desc := p.Endpoint.Description
@@ -79,18 +75,8 @@ func (r *TextRenderer) renderProbeList(w io.Writer, probes []domain.Probe) {
 		if p.IsSuccessful() {
 			fmt.Fprintf(w, "\t%s %-40s [%.2f ms]\n", statusIcon, desc, p.LatencyMs)
 		} else {
-			errorMsg := r.truncateError(p.Error, 50)
+			errorMsg := truncateError(p.Error, maxCharPerError)
 			fmt.Fprintf(w, "\t%s %-40s %s\n", statusIcon, desc, errorMsg)
 		}
 	}
-}
-
-func (r *TextRenderer) truncateError(msg string, maxLen int) string {
-	if msg == "" {
-		return ""
-	}
-	if len(msg) <= maxLen {
-		return msg
-	}
-	return msg[:maxLen-3] + "..."
 }
