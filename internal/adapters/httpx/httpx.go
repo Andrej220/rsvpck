@@ -17,7 +17,7 @@ import (
 
 func GetCertificates(ctx context.Context, addr, serverName string) ([]domain.TLSCertificate, error) {
 
-	var timeout time.Duration = 1 * time.Second
+	var timeout time.Duration = 10 * time.Second
 
 	if addr == "" {
 		return nil, errors.New("addr is required (host:port)")
@@ -45,7 +45,7 @@ func GetCertificates(ctx context.Context, addr, serverName string) ([]domain.TLS
 	}
 	tlsConn := tls.Client(rawConn, cfg)
 
-	// Context-aware handshake (Go 1.20+).
+	// Context-aware handshake 
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		return nil, err
 	}
