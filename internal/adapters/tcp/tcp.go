@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const localTimeOut = 3 * time.Second
+const localTimeOut = 10 * time.Second
 
 type Checker struct{}
 
