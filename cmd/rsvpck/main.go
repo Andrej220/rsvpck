@@ -69,7 +69,7 @@ func main() {
 
 func printHeader() {
 	fmt.Println("\nRSVP CHECK - Connectivity Diagnostics")
-	fmt.Println("══════════════════════════════════════")
+	fmt.Println("-------------------------------------")
 }
 
 func buildNetTestConfig(proxyURL string) (domain.NetTestConfig, error) {
@@ -111,3 +111,7 @@ func buildNetTestConfig(proxyURL string) (domain.NetTestConfig, error) {
 		proxyURL, // e.g. "http://proxy.corp:8080"
 	)
 }
+
+//docker run --rm -ti -v "$PWD":/app -w/app golang:1.23-alpine sh
+//apk add build-base
+//CGO_ENABLE=1 go build -tags netgo -o rsvpck ./cmd/rsvpck/*.go
