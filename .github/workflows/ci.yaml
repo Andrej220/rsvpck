@@ -1,161 +1,159 @@
-#name: CI & Release
-#
-#on:
-#  push:
-#    branches: [ "**" ]  # run tests
-#    tags: [ "v*.*.*" ]  # trigger on version tag
-#  pull_request:         # run tests on pull request
-#
-#permissions:
-#  contents: write   
-#
-#jobs:
-#  test:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#      - uses: actions/setup-go@v5
-#        with:
-#          go-version: "1.22.x"
-#      - uses: actions/cache@v4
-#        with:
-#          path: |
-#            ~/.cache/go-build
-#            ~/go/pkg/mod
-#          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-#          restore-keys: ${{ runner.os }}-go-
-#      - name: Go vet & test (race)
-#        run: |
-#          go vet ./...
-#          go test ./... -race -count=1 -v
-#
-#  build:
-#    name: Build (matrix)
-#    if: ${{ github.ref_type == 'tag' }}
-#    needs: test
-#    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        goos:   [ linux, windows ]
-#        goarch: [ amd64, arm64 ]
-#    env:
-#      CGO_ENABLED: "0"
-#      APP_NAME: rsvpck
-#    steps:
-#      - uses: actions/checkout@v4
-#        with:
-#          fetch-depth: 0    # TODO: changelogs
-#      - uses: actions/setup-go@v5
-#        with:
-#          go-version: "1.22.x"
-#
-#      - name: Version from tag
-#        id: ver
-#        run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-#
-#      - name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
-#        run: |
-#          mkdir -p dist
-#          base="${{ env.APP_NAME }}_${{ steps.ver.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}"
-#          bin="$base"
-#          [[ "${{ matrix.goos }}" == "windows" ]] && bin="${base}.exe"
-#          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-#            go build -trimpath -ldflags "-s -w -X main.version=${{ steps.ver.outputs.version }}" \
-#              -o "dist/${bin}" ./...
-#
-#      - name: Install UPX
-#        run: |
-#          sudo apt-get update -y
-#          sudo apt-get install -y upx
-#
-#      - name: UPX-compress ${{ matrix.goos }}-${{ matrix.goarch }}
-#        shell: bash
-#        run: |
-#          set -euo pipefail
-#          base="${{ env.APP_NAME }}_${{ steps.ver.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}"
-#          bin="$base"
-#          [[ "${{ matrix.goos }}" == "windows" ]] && bin="${base}.exe"
-#
-#          # Compress (non-fatal if UPX trips on a platform)
-#          if command -v upx >/dev/null 2>&1; then
-#            echo "Compressing dist/${bin} with UPX…"
-#            upx --best --lzma "dist/${bin}" || echo "UPX failed; shipping uncompressed."
-#            # quick integrity test if compressed
-#            upx -t "dist/${bin}" || true
-#            ls -lh "dist/${bin}"
-#          fi
-#          
-#      - name: Package archives
-#        run: |
-#          cd dist
-#          for f in *; do
-#            [[ -f "$f" && "$f" != *.txt ]] || continue
-#            if [[ "$f" == *.exe ]]; then
-#              zip "${f%.exe}.zip" "$f"
-#            else
-#              tar czf "${f}.tar.gz" "$f"
-#            fi
-#          done
-#          sha256sum * > SHA256SUMS.txt
-#
-#      - name: Upload build artifacts
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: "${{ matrix.goos }}-${{ matrix.goarch }}"
-#          path: |
-#            dist/*
-#          if-no-files-found: error
-#          retention-days: 7
-#
-#  release:
-#    name: Create GitHub Release (single job)
-#    if: ${{ github.ref_type == 'tag' }}
-#    needs: build
-#    runs-on: ubuntu-latest
-#    env:
-#     APP_NAME: rsvpck
-#    steps:
-#      - name: Download all artifacts
-#        uses: actions/download-artifact@v4
-#        with:
-#          path: collected
-#          merge-multiple: true        
-#
-#      - name: List collected files, debug
-#        run: |
-#          echo "Collected files:"
-#          ls -l collected
-#
-#      - name: Make consolidated checksums
-#        run: |
-#          cd collected
-#          rm -f SHA256SUMS.txt
-#          # include all release assets we’ll upload (archives + exe)
-#          sha256sum ${{ env.APP_NAME }}_*_linux_*.tar.gz \
-#                     ${{ env.APP_NAME }}_*_windows_*.zip \
-#                     ${{ env.APP_NAME }}_*_windows_*.exe \
-#            > SHA256SUMS.txt
-#          wc -l SHA256SUMS.txt
-#
-#      - name: Create/Update GitHub Release
-#        uses: softprops/action-gh-release@v2
-#        with:
-#          tag_name: ${{ github.ref_name }}
-#          name:     ${{ github.ref_name }}
-#          draft: false
-#          prerelease: false
-#          generate_release_notes: true
-#          make_latest: true
-#          fail_on_unmatched_files: false
-#          files: |
-#            collected/${{ env.APP_NAME }}_*_linux_amd64
-#            collected/${{ env.APP_NAME }}_*_linux_arm64
-#            collected/${{ env.APP_NAME }}_*_linux_*.tar.gz
-#            collected/${{ env.APP_NAME }}_*_windows_*.zip
-#            collected/${{ env.APP_NAME }}_*_windows_*.exe
-#            collected/SHA256SUMS.txt
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#
-#
+name: CI & Release
+
+on:
+  push:
+    branches: [ "**" ]
+    tags: [ "v*.*.*" ]
+  pull_request:
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: rsvpck
+  CGO_ENABLED: "0"     
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.23-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build deps
+        run: apk add --no-cache git
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            /root/.cache/go-build
+            /go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+      - name: Go vet & test (race)
+        run: |
+          go version
+          go vet ./...
+          go test ./... -race -count=1 -v
+
+  build:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    needs: test
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.23-alpine
+    strategy:
+      fail-fast: false
+      matrix:
+        goos:   [ linux, windows ]
+        goarch: [ amd64 ]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Install tools
+        run: apk add --no-cache upx zip
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            /root/.cache/go-build
+            /go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+      - name: Version from tag
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
+        shell: sh
+        run: |
+          set -eu
+          mkdir -p dist
+          base="${APP_NAME}_${{ steps.ver.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}"
+          bin="$base"
+          [ "${{ matrix.goos }}" = "windows" ] && bin="${base}.exe"
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            go build -trimpath -ldflags "-s -w -X main.version=${{ steps.ver.outputs.version }}" \
+              -o "dist/${bin}" ./...
+
+      - name: UPX compress
+        shell: sh
+        run: |
+          set -eu
+          base="${APP_NAME}_${{ steps.ver.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}"
+          bin="$base"
+          [ "${{ matrix.goos }}" = "windows" ] && bin="${base}.exe"
+          if command -v upx >/dev/null 2>&1; then
+            upx --best --lzma "dist/${bin}" || echo "UPX failed; keeping uncompressed"
+            upx -t "dist/${bin}" || true
+            ls -lh "dist/${bin}"
+          fi
+
+      - name: Package archives
+        shell: sh
+        run: |
+          set -eu
+          cd dist
+          for f in *; do
+            [ -f "$f" ] || continue
+            case "$f" in
+              *.exe) zip "${f%.exe}.zip" "$f" ;;
+              *)     tar czf "${f}.tar.gz" "$f" ;;
+            esac
+          done
+          sha256sum * > SHA256SUMS.txt
+          ls -lh
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ matrix.goos }}-${{ matrix.goarch }}"
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.23-alpine
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: collected
+          merge-multiple: true
+
+      - name: Make consolidated checksums
+        shell: sh
+        run: |
+          set -eu
+          cd collected
+          rm -f SHA256SUMS.txt
+          sha256sum ${APP_NAME}_*_linux_*.tar.gz \
+                    ${APP_NAME}_*_windows_*.zip \
+                    ${APP_NAME}_*_windows_*.exe \
+                    ${APP_NAME}_*_linux_amd64 \
+            > SHA256SUMS.txt
+          wc -l SHA256SUMS.txt
+          ls -lh
+
+      - name: Create/Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name:     ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          make_latest: true
+          fail_on_unmatched_files: false
+          files: |
+            collected/${{ env.APP_NAME }}_*_linux_amd64
+            collected/${{ env.APP_NAME }}_*_linux_*.tar.gz
+            collected/${{ env.APP_NAME }}_*_windows_*.zip
+            collected/${{ env.APP_NAME }}_*_windows_*.exe
+            collected/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
