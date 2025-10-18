@@ -74,9 +74,10 @@ jobs:
           base="${APP_NAME}_${{ steps.ver.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}"
           bin="$base"
           [ "${{ matrix.goos }}" = "windows" ] && bin="${base}.exe"
+          PKG=./cmd/rsvpck
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
             go build -trimpath -ldflags "-s -w -X main.version=${{ steps.ver.outputs.version }}" \
-              -o "dist/${bin}" ./...
+            -o "dist/${bin}" "$PKG"
 
       - name: UPX compress
         shell: sh
