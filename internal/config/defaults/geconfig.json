@@ -15,9 +15,13 @@
     {"target":"https://insite-eu.gehealthcare.com:443","type":"public","kind":"http","note":"GE Healthcare InSite (via 54.154.45.26:443)","useProxy":true}
   ],
   "vpnEndpoints": [
-    {"target":"150.2.101.89","type":"vpn","kind":"icmp","note":"ping VPN"},
-    {"target":"82.136.152.65","type":"vpn","kind":"icmp","note":"ping SJUNET"},
-    {"target":"150.2.101.89:443","type":"vpn","kind":"tcp","note":"VPN endpoint 1"},
-    {"target":"82.136.152.65:443","type":"vpn","kind":"tcp","note":"VPN endpoint 2"}
+    {"target":"150.2.101.89","type":"vpn","kind":"icmp","note":"ping 150.2.101.89"},
+    {"target":"150.2.1.251","type":"vpn","kind":"icmp","note":"ping 150.2.1.251"},
+    {"target":"10.25.0.20","type":"vpn","kind":"icmp","note":"ping 10.25.0.20"},
+    {"target":"82.136.152.78","type":"vpn","kind":"icmp","note":"ping 82.136.152.78"},
+    {"target":"150.2.101.89:443","type":"vpn","kind":"tcp","note":"endpoint 150.2.101.89:443"},
+    {"target":"150.2.1.251:8002","type":"vpn","kind":"tcp","note":"endpoint 150.2.1.251:8002"},
+    {"target":"10.25.0.20:8080","type":"vpn","kind":"tcp","note":"endpoint 10.25.0.20:8080"},
+    {"target":"82.136.152.78:8002","type":"vpn","kind":"tcp","note":"endpoint 82.136.152.78:8002"}
   ]
 }
