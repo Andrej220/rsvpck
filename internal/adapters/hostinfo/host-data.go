@@ -26,15 +26,20 @@ func GetCRMInfo(ctx context.Context) domain.HostInfo {
 
 func getSID(ctx context.Context) string {
 
-	cmd := exec.CommandContext(ctx, "/opt/InSite/InSiteAgent/bin/AgentStatus")
+	var nonRoot string
+	cmd := exec.CommandContext(ctx, "/opt/InSite/InSiteAgent/bin/GetCRMNumber.py")
 	b, err := cmd.CombinedOutput()
 	if err == nil {
 		return string(b)
+	}else{
+		if strings.Contains(err.Error(),"exit status 102"){
+			nonRoot  = " (non root mode)"
+		}
 	}
 
 	hostname := getHostname()
 	if hostname != "" {
-		return hostname
+		return hostname + nonRoot
 	}
 
 	if b, err := os.ReadFile("/etc/machine-id"); err == nil {
