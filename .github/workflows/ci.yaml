@@ -18,10 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: golang:1.23-alpine
+    env:
+      CGO_ENABLED: 1 
     steps:
       - uses: actions/checkout@v4
       - name: Install build deps
-        run: apk add --no-cache git
+        run: apk add --no-cache git build-base
       - name: Cache Go modules
         uses: actions/cache@v4
         with:
