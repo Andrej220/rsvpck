@@ -12,11 +12,19 @@ import (
 	"github.com/azargarov/rsvpck/internal/config"
 	"github.com/azargarov/rsvpck/internal/app"
 	"github.com/azargarov/rsvpck/internal/domain"
+	//"github.com/azargarov/rsvpck/internal/adapters/speedtest"
 
 	"context"
 	"fmt"
 	"os"
 	"time"
+	"io"
+)
+
+var version = "dev"
+
+const (
+    applicationName = "RSvP connectivity checker"
 )
 
 func main() {
@@ -48,11 +56,11 @@ func main() {
 	h := hostinfo.GetCRMInfo(ctx)
 	autostrCfg := autostr.Config{Separator: autostr.Ptr("\n"), FieldValueSeparator: autostr.Ptr(" : "), PrettyPrint: true}
 
-	text.PrintBlock(os.Stdout, "SYSTEM INFORMATION", autostr.String(h, autostrCfg))
+	text.PrintBlock(os.Stdout, "SYSTEM INFORMATION", autostr.String(h, autostrCfg), renderConf)
 	h.TLSCert, err = httpx.GetCertificates(ctx, "insite-eu.gehealthcare.com:443", "insite-eu.gehealthcare.com")
 
 	if err == nil {
-		text.PrintList(os.Stdout, "TLS certificates, eu-insite.gehealthcare.com\n", h.TLSCert)
+		text.PrintList(os.Stdout, "TLS certificates, eu-insite.gehealthcare.com\n", h.TLSCert, renderConf)
 	} else {
 		fmt.Println("Failed to fetch certificates")
 	}
@@ -143,3 +151,12 @@ func printHeader() {
 //docker run --rm -ti -v "$PWD":/app -w/app golang:1.23-alpine sh
 //apk add build-base
 //CGO_ENABLE=1 go build -tags netgo -o rsvpck ./cmd/rsvpck/*.go
+
+//docker run --rm -ti -v "$PWD":/app -w /app golang:1.23-alpine sh -lc '
+//  apk add --no-cache upx zip git &&
+//  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=v0.1.0" -o dist/rsvpck &&
+//  upx --best --lzma dist/rsvpck || true &&
+//  tar czf dist/rsvpck_linux_amd64.tar.gz -C dist rsvpck &&
+//  sha256sum dist/* > dist/SHA256SUMS.txt &&
+//  ls -lh dist
+//'
