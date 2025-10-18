@@ -78,7 +78,7 @@ func main() {
 
 	stopSpinner := startAnimatedSpinner(os.Stdout, ctx, 120 * time.Millisecond)
 
-	executor := app.NewExecutor(tcpChecker, dnsChecker, httpChecker, icmpChecker, domain.PolicyOptimized)
+	executor := app.NewExecutor(tcpChecker, dnsChecker, httpChecker, icmpChecker, domain.PolicyExhaustive)
 	result := executor.Run(ctx, testConfig)
 
 	stopSpinner()
