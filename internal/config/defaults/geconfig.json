@@ -1,0 +1,23 @@
+{
+  "proxyURL": "http://54.154.45.26:443",
+  "directEndpoints": [
+    {"target":"1.1.1.1","type":"public","kind":"icmp","note":"ping 1.1.1.1"},
+    {"target":"8.8.8.8","type":"public","kind":"icmp","note":"ping 8.8.8.8"},
+    {"target":"google.com","type":"public","kind":"icmp","note":"ping google.com"},
+    {"target":"insite-eu.gehealthcare.com","type":"public","kind":"dns","note":"DNS resolution insite-eu"},
+    {"target":"insite.gehealthcare.com","type":"public","kind":"dns","note":"DNS resolution insite"},
+    {"target":"google.com","type":"public","kind":"dns","note":"DNS resolution google.com"},
+    {"target":"cloudflare.com","type":"public","kind":"dns","note":"DNS resolution cloudflare.com"},
+    {"target":"google.com:443","type":"public","kind":"tcp","note":"Google HTTPS"},
+    {"target":"https://insite-eu.gehealthcare.com:443","type":"public","kind":"http","note":"GE Healthcare InSite (direct Internet)","useProxy":false}
+  ],
+  "proxyEndpoints": [
+    {"target":"https://insite-eu.gehealthcare.com:443","type":"public","kind":"http","note":"GE Healthcare InSite (via 54.154.45.26:443)","useProxy":true}
+  ],
+  "vpnEndpoints": [
+    {"target":"150.2.101.89","type":"vpn","kind":"icmp","note":"ping VPN"},
+    {"target":"82.136.152.65","type":"vpn","kind":"icmp","note":"ping SJUNET"},
+    {"target":"150.2.101.89:443","type":"vpn","kind":"tcp","note":"VPN endpoint 1"},
+    {"target":"82.136.152.65:443","type":"vpn","kind":"tcp","note":"VPN endpoint 2"}
+  ]
+}

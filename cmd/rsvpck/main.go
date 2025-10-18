@@ -9,6 +9,7 @@ import (
 	"github.com/azargarov/rsvpck/internal/adapters/icmp"
 	"github.com/azargarov/rsvpck/internal/adapters/render/text"
 	"github.com/azargarov/rsvpck/internal/adapters/tcp"
+	"github.com/azargarov/rsvpck/internal/config"
 	"github.com/azargarov/rsvpck/internal/app"
 	"github.com/azargarov/rsvpck/internal/domain"
 
@@ -19,13 +20,30 @@ import (
 )
 
 func main() {
+	
+	rsvpConf := parseFlagsToConfig()
+	if rsvpConf.printVersion{
+		fmt.Printf("%s, version %s\n", applicationName, version)
+		return
+	}
 
 	printHeader()
-	rsvpConf := parseFlagsToConfig()
+	
 
+	var renderer domain.Renderer
+	renderConf := text.NewRenderConfig(text.WithForceASCII(rsvpConf.forseASCII))
+	
 	var err error
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
+
+	//if rsvpConf.speedtest{
+	//	res :=runSpeedTest(ctx)
+	//	if res != nil{
+	//		fmt.Println(res.String())
+	//	}
+	//	return
+	//}
 
 	h := hostinfo.GetCRMInfo(ctx)
 	autostrCfg := autostr.Config{Separator: autostr.Ptr("\n"), FieldValueSeparator: autostr.Ptr(" : "), PrettyPrint: true}
@@ -43,24 +61,25 @@ func main() {
 	dnsChecker := &dns.Checker{}
 	httpChecker := &http.Checker{}
 	icmpChecker := &icmp.Checker{}
-	proxyURL := "http://54.154.45.26:443"
 
-	config, err := buildNetTestConfig(proxyURL)
+	testConfig, err := config.LoadEmbedded()
 	if err != nil {
 		fmt.Printf("Invalid config: %v", err)
 		return
 	}
 	executor := app.NewExecutor(tcpChecker, dnsChecker, httpChecker, icmpChecker, domain.PolicyOptimized)
-	result := executor.Run(ctx, config)
+	result := executor.Run(ctx, testConfig)
+
+	stopSpinner()
 
 	var renderer domain.Renderer
 	if rsvpConf.textRender {
-		renderer = text.NewRenderer()
+		renderer = text.NewRenderer(renderConf)
 		if err := renderer.Render(os.Stdout, result); err != nil {
 			fmt.Printf("Failed to render: %v", err)
 		}
 	} else {
-		renderer = text.NewTableRenderer()
+		renderer = text.NewTableRenderer(renderConf)
 		if err := renderer.Render(os.Stdout, result); err != nil {
 			fmt.Printf("Failed to render: %v", err)
 		}
