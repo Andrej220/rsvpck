@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-func printSummary(w io.Writer, result domain.ConnectivityResult) {
+func printSummary(w io.Writer, result domain.ConnectivityResult, conf *RenderConfig) {
 
-	status := red("None")
+	status := conf.Red("None")
 	if result.IsConnected {
-		status = green("Connected")
+		status = conf.Green("Connected")
 	}
 
 	mode := modeString(result.Mode)

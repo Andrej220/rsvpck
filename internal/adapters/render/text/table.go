@@ -12,10 +12,12 @@ import (
 
 const maxTableWidth = 400
 
-type TableRenderer struct{}
+type TableRenderer struct{
+	conf *RenderConfig
+}
 
-func NewTableRenderer() *TableRenderer {
-	return &TableRenderer{}
+func NewTableRenderer(conf *RenderConfig) *TableRenderer {
+	return &TableRenderer{conf: conf}
 }
 
 func (tr *TableRenderer) Render(w io.Writer, result domain.ConnectivityResult) error {
@@ -23,21 +25,22 @@ func (tr *TableRenderer) Render(w io.Writer, result domain.ConnectivityResult) e
 	vpn, direct, proxy := tr.groupProbes(result.Probes)
 
 	// Print overall status
-	printSummary(w, result)
-
+	
 	// Print sections
 	if len(vpn) > 0 {
 		tr.renderProbeTable(w, vpn, "VPN Connectivity")
 	}
-
+	
 	if len(direct) > 0 {
 		tr.renderProbeTable(w, direct, "Direct Internet")
 	}
-
+	
 	if len(proxy) > 0 {
 		tr.renderProbeTable(w, proxy, "Internet via Proxy")
 	}
-
+	
+	printSummary(w, result, tr.conf)
+	
 	return nil
 }
 
@@ -60,7 +63,7 @@ func (tr *TableRenderer) renderProbeTable(w io.Writer, probes []domain.Probe, na
 		tablewriter.WithRowAutoWrap(tw.WrapNormal),
 		tablewriter.WithHeaderAutoWrap(tw.WrapTruncate),
 		tablewriter.WithMaxWidth(maxTableWidth),
-		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{Symbols: getTableBorders()})),
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{Symbols: tr.conf.TableSymbols})),
 	)
 
 	table.Header([]string{name, "Status", "Latency", "Details"})
@@ -71,9 +74,9 @@ func (tr *TableRenderer) renderProbeTable(w io.Writer, probes []domain.Probe, na
 			desc = fmt.Sprintf("%s (%s)", p.Endpoint.Target, p.Endpoint.TargetType.String())
 		}
 
-		statusStr := failSym + " Fail"
+		statusStr := tr.conf.FailSym + " Fail"
 		if p.IsSuccessful() {
-			statusStr = okSym + " Pass"
+			statusStr = tr.conf.OkSym + " Pass"
 		}
 
 		latencyStr := "-"

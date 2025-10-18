@@ -7,35 +7,37 @@ import (
 	"github.com/azargarov/rsvpck/internal/domain"
 )
 
-type TextRenderer struct{}
+type TextRenderer struct{
+	conf *RenderConfig
+}
 
-func NewRenderer() *TextRenderer {
-	return &TextRenderer{}
+func NewRenderer(conf *RenderConfig) *TextRenderer {
+	return &TextRenderer{conf: conf}
 }
 
 func (r *TextRenderer) Render(w io.Writer, result domain.ConnectivityResult) error {
 
-	printSummary(w, result)
-
 	vpnProbes, directProbes, proxyProbes := r.groupProbes(result.Probes)
-
+	
 	if len(vpnProbes) > 0 {
 		fmt.Fprintln(w, "VPN Connectivity:")
 		r.renderProbeList(w, vpnProbes)
 		fmt.Fprintln(w)
 	}
-
+	
 	if len(directProbes) > 0 {
 		fmt.Fprintln(w, "Direct Internet:")
 		r.renderProbeList(w, directProbes)
 		fmt.Fprintln(w)
 	}
-
+	
 	if len(proxyProbes) > 0 {
 		fmt.Fprintln(w, "Internet via Proxy:")
 		r.renderProbeList(w, proxyProbes)
 		fmt.Fprintln(w)
 	}
+	
+	printSummary(w, result, r.conf)
 
 	return nil
 }
@@ -62,9 +64,9 @@ func (r *TextRenderer) renderProbeList(w io.Writer, probes []domain.Probe) {
 	})
 
 	for _, p := range probes {
-		statusIcon := failSym
+		statusIcon := r.conf.FailSym
 		if p.IsSuccessful() {
-			statusIcon = okSym
+			statusIcon = r.conf.OkSym
 		}
 
 		desc := p.Endpoint.Description
