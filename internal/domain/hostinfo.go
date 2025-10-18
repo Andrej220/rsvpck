@@ -35,11 +35,6 @@ func (t TLSCertificate) String() string {
 	return autostr.String(t, autostrCfg)
 }
 
-//type TLSCertificateFetcher interface {
-//	// addr - "host:443"; serverName used for SNI/hostname verification.
-//	GetCertificates(ctx context.Context, addr, serverName string) ([]TLSCertificate, error)
-//}
-
 func NewTLSCertificate() []TLSCertificate {
 	return []TLSCertificate{}
 }
