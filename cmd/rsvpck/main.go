@@ -67,12 +67,14 @@ func main() {
 		fmt.Printf("Invalid config: %v", err)
 		return
 	}
+
+	stopSpinner := startAnimatedSpinner(os.Stdout, ctx, 120 * time.Millisecond)
+
 	executor := app.NewExecutor(tcpChecker, dnsChecker, httpChecker, icmpChecker, domain.PolicyOptimized)
 	result := executor.Run(ctx, testConfig)
 
 	stopSpinner()
 
-	var renderer domain.Renderer
 	if rsvpConf.textRender {
 		renderer = text.NewRenderer(renderConf)
 		if err := renderer.Render(os.Stdout, result); err != nil {
@@ -86,50 +88,57 @@ func main() {
 	}
 }
 
+func startAnimatedSpinner(w io.Writer, parent context.Context, interval time.Duration) (stop func()) {
+	ctx, cancel := context.WithCancel(parent)
+	done := make(chan struct{})
+
+	//frames := []string{"|", "/", "-", "\\"} 
+	frames := []string{"      ", ".", "..", "...", "....",".....","......", " .....", "  ....", "   ...","    ..","     ."}
+
+	// Hide cursor
+	fmt.Fprint(w, "\x1b[?25l")
+
+	go func() {
+		t := time.NewTicker(interval)
+		defer func() {
+			t.Stop()
+			fmt.Fprint(w, "\r \r") // clear spinner
+			fmt.Fprint(w, "\x1b[?25h")
+			close(done)
+		}()
+		i := 0
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				fmt.Fprintf(w, "\r%s", frames[ i % len(frames) ])
+				i++
+			}
+		}
+	}()
+	return func() {
+		cancel()
+		<-done
+	}
+}
+
 func printHeader() {
 	fmt.Println("\nRSVP CHECK - Connectivity Diagnostics")
 	fmt.Println("-------------------------------------")
 }
 
-func buildNetTestConfig(proxyURL string) (domain.NetTestConfig, error) {
 
-	directEndpoints := []domain.Endpoint{
-		domain.MustNewICMPEndpoint("1.1.1.1", domain.EndpointTypePublic, "ping 1.1.1.1"),
-		domain.MustNewICMPEndpoint("8.8.8.8", domain.EndpointTypePublic, "ping 8.8.8.8"),
-		domain.MustNewICMPEndpoint("google.com", domain.EndpointTypePublic, "ping google.com"),
-		domain.MustNewDNSEndpoint("insite-eu.gehealthcare.com", domain.EndpointTypePublic, "DNS resolution insite-eu"),
-		domain.MustNewDNSEndpoint("insite.gehealthcare.com", domain.EndpointTypePublic, "DNS resolution insite-eu"),
-		domain.MustNewDNSEndpoint("google.com", domain.EndpointTypePublic, "DNS resolution google.com"),
-		domain.MustNewDNSEndpoint("cloudflare.com", domain.EndpointTypePublic, "DNS resolution claudflare.com"),
-		domain.MustNewTCPEndpoint("google.com:443", domain.EndpointTypePublic, "Google HTTPS"),
-		domain.MustNewHTTPEndpoint("https://insite-eu.gehealthcare.com:443",
-			domain.EndpointTypePublic,
-			false,
-			"",
-			"GE Healthcare InSite (direct Internet)"),
-	}
-	proxyEndpoints := []domain.Endpoint{
-		//domain.MustNewICMPEndpoint("54.154.45.26", domain.EndpointTypePublic,"Ping Internet proxy"),
-		domain.MustNewHTTPEndpoint("https://insite-eu.gehealthcare.com:443",
-			domain.EndpointTypePublic,
-			true,
-			proxyURL,
-			"GE Healthcare InSite (via proxy)"),
-	}
-
-	vpnEndpoints := []domain.Endpoint{
-		domain.MustNewICMPEndpoint("150.2.101.89", domain.EndpointTypeVPN, "ping VPN"),
-		domain.MustNewICMPEndpoint("82.136.152.65", domain.EndpointTypeVPN, "ping SJUNET"),
-		domain.MustNewTCPEndpoint("150.2.101.89:443", domain.EndpointTypeVPN, "VPN endpoint 1"),
-		domain.MustNewTCPEndpoint("82.136.152.65:443", domain.EndpointTypeVPN, "VPN endpoint 2"),
-	}
-	return domain.NewNetTestConfig(
-		vpnEndpoints,
-		directEndpoints,
-		proxyEndpoints,
-		proxyURL, // e.g. "http://proxy.corp:8080"
-	)
-}
+//func runSpeedTest(ctx context.Context) *speedtest.SpeedtestResult{
+//	fmt.Println("Test Network Speed")
+//	spTest := speedtest.SpeedtestChecker{}
+//	result, err :=spTest.Run(ctx)
+//	if err != nil{
+//		return nil
+//	}
+//
+//	return result
+//}
 
 //docker run --rm -ti -v "$PWD":/app -w/app golang:1.23-alpine sh
 //apk add build-base
