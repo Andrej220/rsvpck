@@ -8,6 +8,7 @@ require (
 	github.com/azargarov/go-utils/autostr v0.1.5
 	github.com/fatih/color v1.18.0
 	github.com/olekukonko/tablewriter v1.1.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
