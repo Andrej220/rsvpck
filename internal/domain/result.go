@@ -12,7 +12,7 @@ type ConnectivityResult struct {
 
 func NewConnectivityResult(mode ConnectivityMode, probes []Probe) ConnectivityResult {
 	isConnected := mode != ModeNone
-	summary := buildSummary(mode, probes)
+	summary := buildSummary(mode)
 	return ConnectivityResult{
 		Mode:        mode,
 		IsConnected: isConnected,

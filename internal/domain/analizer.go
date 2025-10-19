@@ -2,48 +2,55 @@ package domain
 
 func AnalyzeConnectivity(probes []Probe, config NetTestConfig) ConnectivityResult {
 	var (
-		vpnSuccess    bool
-		directSuccess bool
-		proxySuccess  bool
-		dnsSuccess    bool
+		vpnOK      bool
+		directOK   bool
+		proxyOK    bool
+		dnsOK bool
 	)
 
 	for _, p := range probes {
-		if p.IsSuccessful() {
-			if p.Endpoint.IsVPN() {
-				vpnSuccess = true
-			} else if p.Endpoint.IsPublic() {
-				if p.Endpoint.TargetType == TargetTypeTCP {
-					directSuccess = true
-				} else if p.Endpoint.TargetType == TargetTypeHTTP && p.Endpoint.MustUseProxy() {
-					proxySuccess = true
-				}
-			}
-		}
-	}
-
-	for _, p := range probes {
 		if p.IsDNSProbe() && p.IsSuccessful() {
-			dnsSuccess = true
+			dnsOK = true
 			break
 		}
 	}
 
+	for _, p := range probes {
+		if !p.IsSuccessful() {
+			continue
+		}
+
+		switch {
+		case p.Endpoint.IsVPN():
+			vpnOK = true
+
+		case !p.Endpoint.IsPublic():
+			continue
+
+		case p.Endpoint.IsDirectType():
+			directOK = true
+
+		case p.Endpoint.IsProxyType():
+			proxyOK = true
+		}
+	}
+
 	var mode ConnectivityMode
-	if directSuccess && dnsSuccess {
+	switch {
+	case directOK && dnsOK:
 		mode = ModeDirect
-	} else if proxySuccess {
+	case proxyOK:
 		mode = ModeViaProxy
-	} else if vpnSuccess {
+	case vpnOK:
 		mode = ModeViaVPN
-	} else {
+	default:
 		mode = ModeNone
 	}
 
 	return NewConnectivityResult(mode, probes)
 }
 
-func buildSummary(mode ConnectivityMode, probes []Probe) string {
+func buildSummary(mode ConnectivityMode) string {
 	switch mode {
 	case ModeViaVPN:
 		return "Connected via VPN."

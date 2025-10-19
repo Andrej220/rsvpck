@@ -10,16 +10,19 @@ proxyURL: http://54.154.45.26:443
 directEndpoints:
   - { target: 1.1.1.1, type: public, kind: icmp, note: "ping 1.1.1.1" }
   - { target: 8.8.8.8, type: public, kind: icmp, note: "ping 8.8.8.8" }
-  - { target: google.com, type: public, kind: icmp, note: "ping google.com" }
-  - { target: insite-eu.gehealthcare.com, type: public, kind: dns, note: "DNS resolution insite-eu" }
-  - { target: insite.gehealthcare.com, type: public, kind: dns, note: "DNS resolution insite" }
-  - { target: google.com, type: public, kind: dns, note: "DNS resolution google.com" }
-  - { target: cloudflare.com, type: public, kind: dns, note: "DNS resolution cloudflare.com" }
-  - { target: google.com:443, type: public, kind: tcp, note: "Google HTTPS" }
-  - { target: https://insite-eu.gehealthcare.com:443, type: public, kind: http, note: "insite-eu, direct Internet", useProxy: false }
+
+  - { target: insite-eu.gehealthcare.com, type: public, kind: dns, note: "DNS insite-eu" }
+  - { target: insite.gehealthcare.com,    type: public, kind: dns, note: "DNS insite" }
+
+  - { target: insite-eu.gehealthcare.com:443, type: public, kind: tcp, note: "TCP insite-eu" }
+  - { target: insite.gehealthcare.com:443,    type: public, kind: tcp,  note: "TCP insite" }
+
+  - { target: https://insite-eu.gehealthcare.com:443, type: public, kind: http, note: "HTTPS insite-eu", useProxy: false }
+  - { target: https://insite.gehealthcare.com:443,    type: public, kind: http, note: "HTTPS insite",    useProxy: false }
 
 proxyEndpoints:
   - { target: https://insite-eu.gehealthcare.com:443, type: public, kind: http, note: "insite-eu via 54.154.45.26:443", useProxy: true }
+  - { target: https://insite.gehealthcare.com:443,    type: public, kind: http, note: "insite via 54.154.45.26:443",    useProxy: true }
 
 vpnEndpoints:
   - { target: *ip1,     type: vpn, kind: tcp, note: *ip1 }

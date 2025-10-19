@@ -136,6 +136,14 @@ func (e Endpoint) IsPublic() bool {
 	return e.Type == EndpointTypePublic
 }
 
+func (e Endpoint) IsDirectType() bool {
+	return (e.TargetType == TargetTypeTCP || e.TargetType == TargetTypeHTTP) && !e.MustUseProxy() 
+}
+
+func (e Endpoint) IsProxyType() bool {
+	return (e.TargetType == TargetTypeTCP || e.TargetType == TargetTypeHTTP) && e.MustUseProxy() 
+}
+
 func (e Endpoint) IsICMP() bool {
 	return e.TargetType == TargetTypeICMP
 }
