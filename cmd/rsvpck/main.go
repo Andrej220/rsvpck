@@ -25,6 +25,7 @@ var version = "dev"
 
 const (
     applicationName = "RSvP connectivity checker"
+	totalTimeout = 300*time.Second
 )
 
 func main() {
@@ -42,7 +43,7 @@ func main() {
 	renderConf := text.NewRenderConfig(text.WithForceASCII(rsvpConf.forseASCII))
 	
 	var err error
-	ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), totalTimeout)
 	defer cancel()
 
 	//if rsvpConf.speedtest{
@@ -62,8 +63,12 @@ func main() {
 	h := hostinfo.GetCRMInfo(ctx)
 	autostrCfg := autostr.Config{Separator: autostr.Ptr("\n"), FieldValueSeparator: autostr.Ptr(" : "), PrettyPrint: true}
 
+	stopSpinner := startAnimatedSpinner(os.Stdout, ctx, 120 * time.Millisecond)	
+
 	text.PrintBlock(os.Stdout, "SYSTEM INFORMATION", autostr.String(h, autostrCfg), renderConf)
 	h.TLSCert, err = httpx.GetCertificatesSmart(ctx, "insite-eu.gehealthcare.com:443", "insite-eu.gehealthcare.com", testConfig.VPNIPs)
+
+	stopSpinner()
 
 	if err == nil {
 		text.PrintList(os.Stdout, "TLS certificates, eu-insite.gehealthcare.com\n", h.TLSCert, renderConf)
@@ -77,7 +82,7 @@ func main() {
 	icmpChecker := &icmp.Checker{}
 
 
-	stopSpinner := startAnimatedSpinner(os.Stdout, ctx, 120 * time.Millisecond)
+	stopSpinner = startAnimatedSpinner(os.Stdout, ctx, 120 * time.Millisecond)
 
 	executor := app.NewExecutor(tcpChecker, dnsChecker, httpChecker, icmpChecker, domain.PolicyExhaustive)
 	result := executor.Run(ctx, testConfig)

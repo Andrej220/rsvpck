@@ -15,16 +15,28 @@ import (
 	"github.com/azargarov/rsvpck/internal/domain"
 )
 
+const singleProxyTimeout = 2 *time.Second
+
 func GetCertificatesSmart(ctx context.Context, addr, serverName string, vpnProxy []string) ([]domain.TLSCertificate, error) {
-    certs, err := GetCertificatesViaProxy(ctx, addr, serverName, "")
-	//err = errors.New("just debug error")
+
+	totalTimeout := singleProxyTimeout * time.Duration(len(vpnProxy) + 1)
+    parentCtx, parentCancel := context.WithTimeout(ctx, totalTimeout)
+    defer parentCancel()
+
+    directCtx, cancel := context.WithTimeout(parentCtx, singleProxyTimeout)
+    certs, err := GetCertificatesViaProxy(directCtx, addr, serverName, "")
+    cancel()
+    //err = errors.New("debug: force proxy fallback")
     if err != nil {
-		for _, proxy := range(vpnProxy){
-			certs, error := GetCertificatesViaProxy(ctx, addr, serverName, proxy)
-			if error == nil {
-				return certs, nil
-			}
-		}
+        for _, proxy := range vpnProxy {
+            attemptCtx, cancel := context.WithTimeout(parentCtx, singleProxyTimeout)
+            certs, proxyErr := GetCertificatesViaProxy(attemptCtx, addr, serverName, proxy)
+            cancel()
+            if proxyErr == nil {
+                return certs, nil
+            }
+            //fmt.Printf("[DEBUG] proxy %s failed: %v\n", proxy, proxyErr)
+        }
     }
     return certs, err  // TODO: add custom error 
 }

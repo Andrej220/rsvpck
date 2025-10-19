@@ -1,9 +1,9 @@
 vpnIPs:
-  - 54.154.45.26:443        # internet proxy if DNS is not availiable
   - &ip1 150.2.101.89:443
   - &ip2 150.2.1.251:8002
   - &ip3 10.25.0.20:8080
   - &ip4 82.136.152.78:8002
+  - 54.154.45.26:443        # internet proxy if DNS is not availiable to fetch certificates
 
 proxyURL: http://54.154.45.26:443
 
