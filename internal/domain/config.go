@@ -7,6 +7,7 @@ type NetTestConfig struct {
 	DirectEndpoints []Endpoint
 	ProxyEndpoints  []Endpoint
 	ProxyURL        string
+	VPNIPs			[]string
 }
 
 func NewNetTestConfig(
@@ -14,6 +15,7 @@ func NewNetTestConfig(
 	directEndpoints []Endpoint,
 	ProxyEndpoints []Endpoint,
 	proxyURL string,
+	vpnIPs []string,
 ) (NetTestConfig, error) {
 	for _, ep := range vpnEndpoints {
 		if ep.Type != EndpointTypeVPN {
@@ -50,6 +52,7 @@ func NewNetTestConfig(
 		DirectEndpoints: directEndpoints,
 		ProxyEndpoints:  ProxyEndpoints,
 		ProxyURL:        proxyURL,
+		VPNIPs: 	     vpnIPs,
 	}, nil
 }
 

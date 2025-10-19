@@ -1,0 +1,28 @@
+vpnIPs:
+  - 54.154.45.26:443        # internet proxy if DNS is not availiable
+  - &ip1 150.2.101.89:443
+  - &ip2 150.2.1.251:8002
+  - &ip3 10.25.0.20:8080
+  - &ip4 82.136.152.78:8002
+
+proxyURL: http://54.154.45.26:443
+
+directEndpoints:
+  - { target: 1.1.1.1, type: public, kind: icmp, note: "ping 1.1.1.1" }
+  - { target: 8.8.8.8, type: public, kind: icmp, note: "ping 8.8.8.8" }
+  - { target: google.com, type: public, kind: icmp, note: "ping google.com" }
+  - { target: insite-eu.gehealthcare.com, type: public, kind: dns, note: "DNS resolution insite-eu" }
+  - { target: insite.gehealthcare.com, type: public, kind: dns, note: "DNS resolution insite" }
+  - { target: google.com, type: public, kind: dns, note: "DNS resolution google.com" }
+  - { target: cloudflare.com, type: public, kind: dns, note: "DNS resolution cloudflare.com" }
+  - { target: google.com:443, type: public, kind: tcp, note: "Google HTTPS" }
+  - { target: https://insite-eu.gehealthcare.com:443, type: public, kind: http, note: "insite-eu, direct Internet", useProxy: false }
+
+proxyEndpoints:
+  - { target: https://insite-eu.gehealthcare.com:443, type: public, kind: http, note: "insite-eu via 54.154.45.26:443", useProxy: true }
+
+vpnEndpoints:
+  - { target: *ip1,     type: vpn, kind: tcp, note: *ip1 }
+  - { target: *ip2,     type: vpn, kind: tcp, note: *ip2 }
+  - { target: *ip3,     type: vpn, kind: tcp, note: *ip3 }
+  - { target: *ip4,     type: vpn, kind: tcp, note: *ip4 }

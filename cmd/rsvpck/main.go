@@ -20,7 +20,7 @@ import (
 	"time"
 	"io"
 )
-
+//TODO: if TLS is stuck thre rest fails due to timeout.
 var version = "dev"
 
 const (
@@ -42,7 +42,7 @@ func main() {
 	renderConf := text.NewRenderConfig(text.WithForceASCII(rsvpConf.forseASCII))
 	
 	var err error
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
 	defer cancel()
 
 	//if rsvpConf.speedtest{
@@ -53,16 +53,22 @@ func main() {
 	//	return
 	//}
 
+	testConfig, err := config.LoadEmbedded()
+	if err != nil {
+		fmt.Printf("Invalid config: %v", err)
+		return
+	}
+	
 	h := hostinfo.GetCRMInfo(ctx)
 	autostrCfg := autostr.Config{Separator: autostr.Ptr("\n"), FieldValueSeparator: autostr.Ptr(" : "), PrettyPrint: true}
 
 	text.PrintBlock(os.Stdout, "SYSTEM INFORMATION", autostr.String(h, autostrCfg), renderConf)
-	h.TLSCert, err = httpx.GetCertificates(ctx, "insite-eu.gehealthcare.com:443", "insite-eu.gehealthcare.com")
+	h.TLSCert, err = httpx.GetCertificatesSmart(ctx, "insite-eu.gehealthcare.com:443", "insite-eu.gehealthcare.com", testConfig.VPNIPs)
 
 	if err == nil {
 		text.PrintList(os.Stdout, "TLS certificates, eu-insite.gehealthcare.com\n", h.TLSCert, renderConf)
 	} else {
-		fmt.Println("Failed to fetch certificates")
+		fmt.Println("Failed fetching certificates")
 	}
 
 	tcpChecker := &tcp.Checker{}
@@ -70,11 +76,6 @@ func main() {
 	httpChecker := &http.Checker{}
 	icmpChecker := &icmp.Checker{}
 
-	testConfig, err := config.LoadEmbedded()
-	if err != nil {
-		fmt.Printf("Invalid config: %v", err)
-		return
-	}
 
 	stopSpinner := startAnimatedSpinner(os.Stdout, ctx, 120 * time.Millisecond)
 
