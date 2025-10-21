@@ -19,6 +19,8 @@ import (
 	"os"
 	"time"
 	"io"
+	"runtime"
+	"bufio"
 )
 //TODO: if TLS is stuck thre rest fails due to timeout.
 var version = "dev"
@@ -100,6 +102,7 @@ func main() {
 			fmt.Printf("Failed to render: %v", err)
 		}
 	}
+	waitForEnterOnWindows()
 }
 
 func startAnimatedSpinner(w io.Writer, parent context.Context, interval time.Duration) (stop func()) {
@@ -142,6 +145,12 @@ func printHeader() {
 	fmt.Println("-------------------------------------")
 }
 
+func waitForEnterOnWindows() {
+	if runtime.GOOS == "windows" {
+		fmt.Println("\nPress Enter to exit...")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+	}
+}
 
 //func runSpeedTest(ctx context.Context) *speedtest.SpeedtestResult{
 //	fmt.Println("Test Network Speed")
