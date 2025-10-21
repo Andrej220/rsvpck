@@ -44,8 +44,34 @@ func (p Probe) String() string {
 }
 
 func NewSuccessfulProbe(endpoint Endpoint, latencyMs float64) Probe {
-	return Probe{Status: StatusPass, Endpoint: endpoint, LatencyMs: latencyMs}
+	p := NewProbe(endpoint)
+	p.MarkSuccess(latencyMs)
+	return *p 
 }
 func NewFailedProbe(endpoint Endpoint, status Status, err error) Probe {
-	return Probe{Status: StatusFail, Endpoint: endpoint, Error: err.Error()}
+	p := NewProbe(endpoint)
+	p.MarkFailure(status, err)
+	return *p 
+}
+
+func NewProbe(endpoint Endpoint) *Probe{
+	return &Probe{Endpoint: endpoint}
+}
+
+func (p *Probe) MarkSuccess(latMs float64) {
+	p.Status = StatusPass
+	p.LatencyMs = latMs
+	p.Error = ""
+	p.Timestamp = time.Now()
+}
+
+func (p *Probe) MarkFailure(st Status, err error) {
+	p.Status = StatusFail
+	p.Error = safeErr(err)
+	p.Timestamp = time.Now()
+}
+
+func safeErr(err error) string {
+	if err == nil { return "" }
+	return err.Error()
 }
