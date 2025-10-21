@@ -103,8 +103,9 @@ func MustNewHTTPEndpoint(url string, typ EndpointType, overProxy bool, proxyURL 
 	if err != nil {
 		panic("invalid HTTP endpoint: " + url + " - " + err.Error())
 	}
-	ep.RequiresProxy = overProxy
-	ep.ProxyURL = proxyURL
+	if(overProxy){
+		ep.SetProxy(proxyURL)
+	}
 	ep.Description = desc
 	return ep
 }

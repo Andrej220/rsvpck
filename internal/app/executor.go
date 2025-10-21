@@ -87,8 +87,8 @@ func (e Executor) runEndpointCheck(ctx context.Context, endpoints []domain.Endpo
 		case domain.TargetTypeTCP:
 			probe = e.tcpChecker.CheckWithContext(ctx, ep)
 		case domain.TargetTypeHTTP:
-			if ep.RequiresProxy {
-				probe = e.httpChecker.CheckViaProxyWithContext(ctx, ep, ep.ProxyURL)
+			if ep.Proxy.MustUseProxy(){
+				probe = e.httpChecker.CheckViaProxyWithContext(ctx, ep, ep.Proxy.URL())
 			} else {
 				probe = e.httpChecker.CheckWithContext(ctx, ep)
 			}

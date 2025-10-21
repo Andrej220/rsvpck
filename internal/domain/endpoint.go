@@ -53,9 +53,16 @@ type Endpoint struct {
 	Target        string // "http://1.1.1.1" or "10.10.0.1:443"
 	TargetType    EndpointTargetType
 	Type          EndpointType
-	RequiresProxy bool
-	ProxyURL      string
+	Proxy         ProxyConfig
 	Description   string
+}
+
+func (e Endpoint) MustUseProxy() bool {
+	return e.TargetType == TargetTypeHTTP && e.Proxy.MustUseProxy()
+}
+
+func (e *Endpoint) SetProxy(proxy string){
+	e.Proxy.Set(proxy)
 }
 
 func (e Endpoint) String() string {
@@ -150,8 +157,4 @@ func (e Endpoint) IsICMP() bool {
 
 func (e Endpoint) IsDNS() bool {
 	return e.TargetType == TargetTypeDNS
-}
-
-func (e Endpoint) MustUseProxy() bool {
-	return e.RequiresProxy && e.TargetType == TargetTypeHTTP
 }

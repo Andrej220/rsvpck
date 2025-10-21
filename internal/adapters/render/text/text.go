@@ -46,7 +46,7 @@ func (r *TextRenderer) groupProbes(probes []domain.Probe) (vpn, direct, proxy []
 	for _, p := range probes {
 		if p.Endpoint.Type == domain.EndpointTypeVPN {
 			vpn = append(vpn, p)
-		} else if p.Endpoint.RequiresProxy {
+		} else if p.Endpoint.Proxy.MustUseProxy(){
 			proxy = append(proxy, p)
 		} else {
 			direct = append(direct, p)
