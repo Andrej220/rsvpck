@@ -8,7 +8,7 @@ import (
 type rsvpckConf struct {
 	textRender  	bool
 	tableRender 	bool
-	forseASCII 		bool
+	forceASCII 		bool
 	//speedtest  		bool
 	printVersion	bool
 }
@@ -44,7 +44,7 @@ func parseFlagsToConfig() *rsvpckConf {
 
 	r := NewRsvpckConf()
 	r.SetRender(*txtRender)
-	r.forseASCII = *flagForceASCII
+	r.forceASCII = *flagForceASCII
 	//r.speedtest = *speedtestFlag
 	r.printVersion = *printVersion
 	return &r

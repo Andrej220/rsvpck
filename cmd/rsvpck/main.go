@@ -40,7 +40,7 @@ func main() {
 	
 
 	var renderer domain.Renderer
-	renderConf := text.NewRenderConfig(text.WithForceASCII(rsvpConf.forseASCII))
+	renderConf := text.NewRenderConfig(text.WithForceASCII(rsvpConf.forceASCII))
 	
 	var err error
 	ctx, cancel := context.WithTimeout(context.Background(), totalTimeout)
