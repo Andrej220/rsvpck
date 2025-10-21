@@ -50,7 +50,7 @@ func (t EndpointType) String() string {
 }
 
 type Endpoint struct {
-	Target        string // "http://1.1.1.1" or "10.10.0.1:443"
+	Target        string 				// "http://1.1.1.1" or "10.10.0.1:443"
 	TargetType    EndpointTargetType
 	Type          EndpointType
 	Proxy         ProxyConfig
@@ -69,6 +69,11 @@ func (e Endpoint) String() string {
 	str := fmt.Sprintf("Target: %s, TType: %s, Type: %s, Descr: %s",
 		e.Target, e.TargetType.String(), e.Type.String(), e.Description)
 	return str
+}
+
+func (e Endpoint) Key() string {
+    return fmt.Sprintf("%s|%s|%s|%t|%s",
+        e.TargetType, e.Type, e.Target, e.MustUseProxy(), e.Proxy.URL())
 }
 
 func NewHTTPEndpoint(url string, typ EndpointType, description string) (Endpoint, error) {
